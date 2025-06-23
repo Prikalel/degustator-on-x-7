@@ -21,7 +21,7 @@ DARK_PURPLE = (102, 0, 153)
 
 # Fonts
 FOOTER_FONT = pygame.font.SysFont('Raleway', 24, bold=True)
-FONT = pygame.font.Font(None, 36)
+FONT = pygame.font.SysFont('SimSun', 24, bold=True, italic=True)
 TITLE_FONT = pygame.font.Font(None, 64)
 
 # Button class
