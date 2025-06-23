@@ -20,7 +20,7 @@ LIGHT_GREEN = (0, 255, 0)
 DARK_PURPLE = (102, 0, 153)
 
 # Fonts
-FOOTER_FONT = pygame.font.Font(None, 24)
+FOOTER_FONT = pygame.font.SysFont('Raleway', 24, bold=True)
 FONT = pygame.font.Font(None, 36)
 TITLE_FONT = pygame.font.Font(None, 64)
 
@@ -47,19 +47,21 @@ play_button = Button(300, 200, 200, 50, "Играть")
 tutor_button = Button(300, 300, 200, 50, "Туториал")
 
 # Footer text
-footer_text = "Добро пожаловать на Планету X-7\nвы - дегустатор, исследователь новой еды для человеческой рассы. Tg @velikiy_prikalel"
+footer_text = "Добро пожаловать на Планету X-7!\nвы - дегустатор, исследователь новой еды для человеческой расы. @velikiy_prikalel"
 
 def show_tutorial():
     try:
-        with open('tutorial.txt', 'r') as file:
+        TUTORIAL_FOND = pygame.font.Font(None, 24)
+        TUTORIAL_FOND_BOLD = pygame.font.SysFont(None, 24, bold=True)
+        with open('tutorial.txt', 'r', encoding='utf-8') as file:
             content = file.read()
         tutorial_lines = content.split('\n')
         SCREEN.fill(WHITE)
         for i, line in enumerate(tutorial_lines):
-            text = FONT.render(line, True, BLACK)
-            SCREEN.blit(text, (50, 50 + i * 30))
-        back_text = FONT.render("Press ESC to return", True, BLACK)
-        SCREEN.blit(back_text, (50, 500))
+            text = (TUTORIAL_FOND_BOLD if line.startswith("##") else TUTORIAL_FOND).render(line, True, BLACK)
+            SCREEN.blit(text, (10, 10 + i * 30))
+        back_text = TUTORIAL_FOND.render("Нажмите ESC для возврата в меню", True, BLACK)
+        SCREEN.blit(back_text, (50, 550))
         pygame.display.flip()
         while True:
             for event in pygame.event.get():
@@ -88,16 +90,21 @@ def main_menu():
         SCREEN.blit(background, (0, 0))
 
         # Draw title
-        # Draw thicker shadow text (two layers)
-        # First layer (closer to text)
+        # Draw even thicker shadow text (three layers)
+        # Outer layer (furtherst from text)
         shadow_text_outer = TITLE_FONT.render("ДЕГУСТАТОР", True, BLACK)
-        shadow_rect_outer = shadow_text_outer.get_rect(center=(WIDTH//2 + 4, 100 + 4))
+        shadow_rect_outer = shadow_text_outer.get_rect(center=(WIDTH//2 + 6, 100 + 6))
         SCREEN.blit(shadow_text_outer, shadow_rect_outer)
         
-        # Second layer (further from text)
-        shadow_text = TITLE_FONT.render("ДЕГУСТАТОР", True, BLACK)
-        shadow_rect = shadow_text.get_rect(center=(WIDTH//2 + 2, 100 + 2))
-        SCREEN.blit(shadow_text, shadow_rect)
+        # Middle layer (closer to text)
+        shadow_text_middle = TITLE_FONT.render("ДЕГУСТАТОР", True, BLACK)
+        shadow_rect_middle = shadow_text_middle.get_rect(center=(WIDTH//2 + 4, 100 + 4))
+        SCREEN.blit(shadow_text_middle, shadow_rect_middle)
+        
+        # Inner layer (closest to text)
+        shadow_text_inner = TITLE_FONT.render("ДЕГУСТАТОР", True, BLACK)
+        shadow_rect_inner = shadow_text_inner.get_rect(center=(WIDTH//2 + 2, 100 + 2))
+        SCREEN.blit(shadow_text_inner, shadow_rect_inner)
         
         # Draw main text
         title_text = TITLE_FONT.render("ДЕГУСТАТОР", True, LIGHT_PURPLE)
@@ -109,13 +116,26 @@ def main_menu():
         tutor_button.draw(SCREEN)
 
         # Draw footer
-        # Draw shadow for footer
+        # Draw even thicker shadow for footer (three layers)
         footer_lines = footer_text.split('\n')
-        y_pos = HEIGHT - 40 + 2
+        y_pos = HEIGHT - 40 + 4  # Start position for outer shadow
+        
         for line in footer_lines:
-            footer_shadow = FOOTER_FONT.render(line, True, BLACK)
-            footer_shadow_rect = footer_shadow.get_rect(center=(WIDTH//2 + 2, y_pos))
-            SCREEN.blit(footer_shadow, footer_shadow_rect)
+            # Outer layer (furtherst from text)
+            footer_shadow_outer = FOOTER_FONT.render(line, True, BLACK)
+            footer_shadow_rect_outer = footer_shadow_outer.get_rect(center=(WIDTH//2 + 6, y_pos))
+            SCREEN.blit(footer_shadow_outer, footer_shadow_rect_outer)
+            
+            # Middle layer (closer to text)
+            footer_shadow_middle = FOOTER_FONT.render(line, True, BLACK)
+            footer_shadow_rect_middle = footer_shadow_middle.get_rect(center=(WIDTH//2 + 4, y_pos - 2))
+            SCREEN.blit(footer_shadow_middle, footer_shadow_rect_middle)
+            
+            # Inner layer (closest to text)
+            footer_shadow_inner = FOOTER_FONT.render(line, True, BLACK)
+            footer_shadow_rect_inner = footer_shadow_inner.get_rect(center=(WIDTH//2 + 2, y_pos - 4))
+            SCREEN.blit(footer_shadow_inner, footer_shadow_rect_inner)
+            
             y_pos += 30
         
         # Draw main footer text
