@@ -1,0 +1,16 @@
+# Digustator Tutorial
+
+Welcome to Planet X-7, the testing ground for humanity's newest profession: the digustator.
+
+Your mission is simple - determine what's edible and what's not by consuming strange alien substances. Each item you eat will give you money, but also effects that can be positive, negative, or... unpredictable.
+
+## Basic Mechanics
+
+- **Play**: Start your digustator journey
+- **Tutor**: View this tutorial text
+- **Eat/Not Eat**: Each round you'll decide whether to consume the offered item
+- **Effects**: Positive effects (like Temporary Immortality) can save you, while negative effects (like Poisoned) will harm you
+- **Starvation**: Skipping too many items will make you starve
+- **Shop**: Every 3 rounds you can visit the shop to buy helpful items
+
+Good luck, and try not to die too many times!
