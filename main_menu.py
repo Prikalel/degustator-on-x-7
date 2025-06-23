@@ -60,7 +60,7 @@ def show_tutorial():
         for i, line in enumerate(tutorial_lines):
             text = (TUTORIAL_FOND_BOLD if line.startswith("##") else TUTORIAL_FOND).render(line, True, BLACK)
             SCREEN.blit(text, (10, 10 + i * 30))
-        back_text = TUTORIAL_FOND.render("Нажмите ESC для возврата в меню", True, BLACK)
+        back_text = TUTORIAL_FOND.render("Нажмите ESC для возврата в меню", True, LIGHT_GREEN)
         SCREEN.blit(back_text, (50, 550))
         pygame.display.flip()
         while True:
