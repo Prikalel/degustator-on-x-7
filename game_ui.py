@@ -39,7 +39,7 @@ class GameUI:
                 from tkinter import messagebox
                 root = tk.Tk()
                 root.withdraw()  # Hide the main window
-                messagebox.showinfo("Проигрыш", f"Ты проиграл! Завершённые раунды: {rounds_count}")
+                messagebox.showinfo("Проигрыш", f"Ты проиграл! Завершённые раунды: {rounds_count}\nИгра закроется, если хочешь начать сначала - перезапусти игру!")
                 root.destroy()
                 pygame.quit()
                 import sys
