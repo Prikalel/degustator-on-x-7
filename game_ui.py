@@ -17,7 +17,7 @@ class GameUI:
 
         if game_state.get('current_item'):
             item_name = game_state['current_item'].get('name', 'Unknown Item')
-            item_text = FONT.render(item_name, True, BLACK)
+            item_text = self.FONT.render(item_name, True, BLACK)
             screen.blit(item_text, (WIDTH//2 - item_text.get_width()//2, 100))
 
         effect_y = 200
