@@ -5,6 +5,7 @@ from window import WIDTH, HEIGHT
 
 # Initialize Pygame
 pygame.init()
+pygame.mixer.init()
 
 import game_ui  # Import the game UI module
 
@@ -13,6 +14,10 @@ SCREEN = pygame.display.set_mode((WIDTH, HEIGHT))
 background = pygame.image.load('main-menu-background.jpg')
 background = pygame.transform.scale(background, (WIDTH, HEIGHT))
 pygame.display.set_caption("Дигустатор")
+
+pygame.mixer.music.load('background-music.mp3')
+pygame.mixer.music.set_volume(0.5)  # Optional: set volume (0.0 to 1.0)
+pygame.mixer.music.play(-1)
 
 
 # Fonts

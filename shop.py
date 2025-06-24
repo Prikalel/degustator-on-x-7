@@ -3,13 +3,15 @@ import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
 import os
+from difficulty_multiplyer import get_difficulty
 
 class ImageListDialog:
     image_data = []
     bouth_item = None
 
-    def __init__(self, root, cached_mappings):
+    def __init__(self, root, cached_mappings, round_num):
         self._cached_mappings = cached_mappings
+        self.round_num = round_num
         self.root = root
         self.root.title("Покупка предмета!")
         self.root.geometry("600x500")
@@ -61,7 +63,7 @@ class ImageListDialog:
         # For this example, we'll create a list of dummy image data
         image_data = []
         for data in self._cached_mappings:
-            image_data.append({"name": data["item"]["name"] + ' за ' + str(2*data["item"]["cost"]) + "$", "path": data["item"]["image"]})
+            image_data.append({"name": data["item"]["name"] + ' за ' + str(get_difficulty(self.round_num)*data["item"]["cost"]) + "$", "path": data["item"]["image"]})
         
         random.shuffle(image_data)
         # For demo purposes, create colored squares instead of loading actual images

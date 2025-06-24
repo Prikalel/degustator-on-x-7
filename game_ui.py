@@ -12,6 +12,7 @@ import time
 from PIL import Image
 import random
 from shop import ImageListDialog
+from difficulty_multiplyer import get_difficulty
 
 max_starvation = 3
 
@@ -89,16 +90,16 @@ class GameUI:
                 root.destroy()
             else:
                 root = tk.Tk()
-                app = ImageListDialog(root, self._cached_mappings)
+                app = ImageListDialog(root, self._cached_mappings, int(game_state['rounds_count']))
                 root.mainloop()
                 if app.bouth_item:
-                    if app.bouth_item["item"]["cost"]*2 > game_state["money"]:
+                    if app.bouth_item["item"]["cost"]*get_difficulty(game_state['rounds_count']) > game_state["money"]:
                         root = tk.Tk()
                         root.withdraw()  # Hide the main window
-                        messagebox.showinfo("Мало денег", "Вы не можете купить " + app.bouth_item["item"]["name"] + ' потому что он стоит ' + str(app.bouth_item["item"]["cost"]*2) + " а у вас всего " + str(game_state["money"]))
+                        messagebox.showinfo("Мало денег", "Вы не можете купить " + app.bouth_item["item"]["name"] + ' потому что он стоит ' + str(app.bouth_item["item"]["cost"]*get_difficulty(game_state['rounds_count'])) + " а у вас всего " + str(game_state["money"]))
                         root.destroy()
                     else:
-                        game_state["money"] = game_state["money"] - app.bouth_item["item"]["cost"]*2
+                        game_state["money"] = game_state["money"] - app.bouth_item["item"]["cost"]*get_difficulty(game_state['rounds_count'])
                         self.eat(game_state, app.bouth_item["item"], False)
                         if "count_bouth" in app.bouth_item["item"]:
                             app.bouth_item["item"]["count_bouth"] = app.bouth_item["item"]["count_bouth"] + 1
