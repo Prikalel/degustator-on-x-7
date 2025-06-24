@@ -10,11 +10,19 @@ class GameUI:
     def __init__(self):
         self.current_item = None
         self.set_new_item()
-        self.eat_button = pygame.Rect(300, 400, 100, 50)
+        self.eat_button = pygame.Rect(300, 400, 110, 50)
         self.eat_button_text = "Съесть"
+        self.skip_button = pygame.Rect(450, 400, 110, 50)
+
+    @staticmethod
+    def is_button_clicked(event, rect: pygame.Rect) -> bool:
+        return event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and rect.collidepoint(event.pos)
 
     def handle_event(self, event):
-        pass
+        if GameUI.is_button_clicked(event, self.eat_button):
+            print("eat!")
+        elif GameUI.is_button_clicked(event, self.skip_button):
+            print("skip!")
 
     def set_new_item(self):
         self.current_item = items_provider.get_random_item()
@@ -73,7 +81,6 @@ class GameUI:
         eat_text_surf = self.FONT.render(self.eat_button_text, True, BLACK)
         screen.blit(eat_text_surf, eat_text_surf.get_rect(center=self.eat_button.center))
 
-        skip_button = pygame.Rect(450, 400, 100, 50)
-        pygame.draw.rect(screen, GRAY, skip_button)
+        pygame.draw.rect(screen, GRAY, self.skip_button)
         skip_text = self.FONT.render("Пропустить", True, BLACK)
-        screen.blit(skip_text, skip_text.get_rect(center=skip_button.center))
+        screen.blit(skip_text, skip_text.get_rect(center=self.skip_button.center))
