@@ -3,9 +3,13 @@ from pygame.locals import *
 from colors import WHITE, BLACK, GRAY, LIGHT_GREEN, DARK_PURPLE, LIGHT_PURPLE, YELLOW
 from window import WIDTH, HEIGHT
 import items_provider
+import effect_provider
+from effect_provider import Effect
 import threading
 import time
 from PIL import Image
+
+max_starvation = 3
 
 class GameUI:
     FONT = pygame.font.SysFont('Raleway', 24)
@@ -22,6 +26,7 @@ class GameUI:
         self.skip_button = pygame.Rect(450, 400, 140, 50)
         self.shop_button = pygame.Rect(650, 10, 100, 30)
         self._cached_images = {}
+        self._cached_mappings = []
 
     def load_loading_animation(self):
         try:
@@ -55,8 +60,47 @@ class GameUI:
             return
             
         if GameUI.is_button_clicked(event, self.eat_button):
-            print("eat!")
+            print("eat! starvation: " + str(game_state['starvation']))
+            # Get effect from provider
+            effect: Effect = effect_provider.get_random_effect()
+
+            # Save item and effect mapping for future reference
+            if self.current_item:
+                self._cached_mappings.append({
+                    'item': self.current_item,
+                    'effect': effect
+                })
+
+            # Handle effect
+            if effect == Effect.Food:
+                # Increase starvation for food
+                game_state['starvation'] = game_state.get('starvation', 0) + 1
+            elif effect == Effect.Toxic:
+                # Decrease starvation for toxic
+                starvation = game_state.get('starvation', 0) - 1
+                game_state['starvation'] = max(0, starvation)
+                game_state['starvation'] = min(game_state['starvation'], max_starvation)
+
+                # Show message about toxic food
+                import tkinter as tk
+                from tkinter import messagebox
+                root = tk.Tk()
+                root.withdraw()  # Hide the main window
+                messagebox.showinfo("Отравление", "Вы съели несъедобное блюдо! Ваш голод понизился")
+                root.destroy()
+
+                # Check if starvation reached 0
+                if starvation < 0:
+                    self._show_game_over(game_state)
+                    return
+
+            # Increment rounds count
+            game_state['money'] = game_state['money'] + self.current_item['cost']
             game_state['rounds_count'] = game_state['rounds_count'] + 1
+
+            # Get next item
+            self.set_new_item()
+            print("starvation: " + str(game_state['starvation']))
         elif GameUI.is_button_clicked(event, self.skip_button):
             starvation = game_state.get('starvation', 0)
             if starvation > 0:
@@ -67,16 +111,8 @@ class GameUI:
                 print("skip!")
             else:
                 # Game over - starvation is 0
-                rounds_count = game_state.get('rounds_count', 0)
-                import tkinter as tk
-                from tkinter import messagebox
-                root = tk.Tk()
-                root.withdraw()  # Hide the main window
-                messagebox.showinfo("Проигрыш", f"Ты проиграл! Завершённые раунды: {rounds_count}\nИгра закроется, если хочешь начать сначала - перезапусти игру!")
-                root.destroy()
-                pygame.quit()
-                import sys
-                sys.exit()
+                self._show_game_over(game_state)
+                return
             game_state['rounds_count'] = game_state['rounds_count'] + 1
         elif GameUI.is_button_clicked(event, self.shop_button):
             print("shop!")
@@ -95,14 +131,14 @@ class GameUI:
     def set_new_item(self):
         # Set loading state
         self.is_loading = True
-        
+
         # Create a thread to fetch the item
         def fetch_item():
             # Get the item
             self.current_item = items_provider.get_random_item()
             # Reset loading state
             self.is_loading = False
-            
+
         # Start the thread
         threading.Thread(target=fetch_item).start()
 
@@ -131,14 +167,23 @@ class GameUI:
             loading_frame = self.loading_frames[self.current_loading_frame]
             loading_rect = loading_frame.get_rect(center=(WIDTH // 2, HEIGHT // 2))
             screen.blit(loading_frame, loading_rect)
-            
+
             # Show loading text
             loading_text = self.FONT.render("Ищем что предложить попробовать...", True, BLACK)
             screen.blit(loading_text, (WIDTH // 2 - loading_text.get_width() // 2, HEIGHT // 2 + 60))
         elif self.current_item:
             item_name = self.current_item.get('name', 'Unknown Item')
             item_text = self.FONT.render(item_name, True, WHITE)
-            screen.blit(item_text, (WIDTH // 2 - item_text.get_width() // 2, 70))
+
+            # Create a black background rectangle for the item name
+            text_bg_rect = item_text.get_rect(center=(WIDTH // 2, 70))
+            # Add some padding around the text
+            text_bg_rect.inflate_ip(20, 10)
+            pygame.draw.rect(screen, BLACK, text_bg_rect)
+
+            # Draw the text on top of the background
+            screen.blit(item_text, item_text.get_rect(center=(WIDTH // 2, 70)))
+
             self.eat_button_text = f"Съесть (+{self.current_item['cost']}$)"
             image_path = self.current_item.get('image')
             if image_path:
@@ -161,7 +206,6 @@ class GameUI:
             screen.blit(effect_text, (50, effect_y))
             effect_y += 30
         starvation = game_state.get('starvation', 0)
-        max_starvation = 3
         if starvation > max_starvation:
             starvation = max_starvation
 
@@ -205,3 +249,16 @@ class GameUI:
             rect = surf.get_rect(center=(self.skip_button.centerx, y_offset + surf.get_height() // 2))
             screen.blit(surf, rect)
             y_offset += surf.get_height() + line_spacing
+
+    def _show_game_over(self, game_state):
+        rounds_count = game_state.get('rounds_count', 0)
+        import tkinter as tk
+        from tkinter import messagebox
+        root = tk.Tk()
+        root.withdraw()  # Hide the main window
+        messagebox.showinfo("Проигрыш", f"Ты проиграл! Завершённые раунды: {rounds_count}\nИгра закроется, если хочешь начать сначала - перезапусти игру!")
+        root.destroy()
+        pygame.quit()
+        import sys
+        sys.exit()
+

@@ -11,8 +11,18 @@ model = pollinations.Image()
 
 
 def get_text():
-    response = llm.invoke([HumanMessage(content="Дай ОДНО случайное короткое название на русском инопланетного гриба, камня, предмета или жидкости, который может быть съеден. 1-2 слова. Перед самим названием укажи что это: гриб, камень, жидкость, растение?")])
-    return response.content
+    thing = random.choice(["гриба", "камня", "жидкости", "растения"])
+    response = llm.invoke([HumanMessage(content=f"Дай ОДНО случайное короткое название на русском инопланетного {thing}, которое могло бы быть съедено. 1-2 слова.")])
+    if thing == "гриба":
+        return "Гриб: " + response.content
+    elif thing == "камня":
+        return "Камень: " + response.content
+    elif thing == "жидкости":
+        return "Жидкость: " + response.content
+    elif thing == "растения":
+        return "Растение: " + response.content
+    else:
+        return response.content
 
 def get_image(name):
     response = llm.invoke([HumanMessage(content="Создай красочное краткое описание инопланетного предмета на английском языке: " + name)])
