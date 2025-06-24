@@ -8,6 +8,7 @@ from effect_provider import Effect
 import threading
 import time
 from PIL import Image
+import random
 
 max_starvation = 3
 
@@ -20,13 +21,13 @@ class GameUI:
         self.loading_frames = self.load_loading_animation()
         self.current_loading_frame = 0
         self.loading_animation_timer = 0
+        self._cached_mappings = []
         self.set_new_item()
         self.eat_button = pygame.Rect(300, 400, 140, 50)
         self.eat_button_text = "Съесть"
         self.skip_button = pygame.Rect(450, 400, 140, 50)
         self.shop_button = pygame.Rect(650, 10, 100, 30)
         self._cached_images = {}
-        self._cached_mappings = []
 
     def load_loading_animation(self):
         try:
@@ -61,25 +62,36 @@ class GameUI:
             
         if GameUI.is_button_clicked(event, self.eat_button):
             print("eat! starvation: " + str(game_state['starvation']))
-            # Get effect from provider
-            effect: Effect = effect_provider.get_random_effect()
-
-            # Save item and effect mapping for future reference
-            if self.current_item:
-                self._cached_mappings.append({
-                    'item': self.current_item,
-                    'effect': effect
-                })
+        
+            # Check if current item is in cached mappings to use the same effect
+            effect = None
+            for mapping in self._cached_mappings:
+                if mapping['item'] == self.current_item:
+                    effect = mapping['effect']
+                    print("Using cached effect for repeated item")
+                    break
+            
+            # If not found in cache, get a new random effect
+            if effect is None:
+                effect = effect_provider.get_random_effect()
+                
+                # Save item and effect mapping for future reference
+                if self.current_item:
+                    self._cached_mappings.append({
+                        'item': self.current_item,
+                        'effect': effect
+                    })
 
             # Handle effect
             if effect == Effect.Food:
                 # Increase starvation for food
                 game_state['starvation'] = game_state.get('starvation', 0) + 1
+                if (game_state['starvation'] > max_starvation):
+                    game_state['starvation'] = game_state['starvation'] - 1
             elif effect == Effect.Toxic:
                 # Decrease starvation for toxic
                 starvation = game_state.get('starvation', 0) - 1
                 game_state['starvation'] = max(0, starvation)
-                game_state['starvation'] = min(game_state['starvation'], max_starvation)
 
                 # Show message about toxic food
                 import tkinter as tk
@@ -134,8 +146,15 @@ class GameUI:
 
         # Create a thread to fetch the item
         def fetch_item():
-            # Get the item
-            self.current_item = items_provider.get_random_item()
+            # Check if we should use a cached item (20% chance if we have enough cached items)
+            if len(self._cached_mappings) > 3 and random.random() < 0.2:
+                # Get a random cached item from our history
+                cached_entry = random.choice(self._cached_mappings)
+                self.current_item = cached_entry['item']
+            else:
+                # Get a new random item
+                self.current_item = items_provider.get_random_item()
+            
             # Reset loading state
             self.is_loading = False
 
