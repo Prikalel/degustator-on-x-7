@@ -133,11 +133,11 @@ class GameUI:
             screen.blit(loading_frame, loading_rect)
             
             # Show loading text
-            loading_text = self.FONT.render("Loading...", True, LIGHT_GREEN)
+            loading_text = self.FONT.render("Ищем что предложить попробовать...", True, BLACK)
             screen.blit(loading_text, (WIDTH // 2 - loading_text.get_width() // 2, HEIGHT // 2 + 60))
         elif self.current_item:
             item_name = self.current_item.get('name', 'Unknown Item')
-            item_text = self.FONT.render(item_name, True, LIGHT_GREEN)
+            item_text = self.FONT.render(item_name, True, WHITE)
             screen.blit(item_text, (WIDTH // 2 - item_text.get_width() // 2, 70))
             self.eat_button_text = f"Съесть (+{self.current_item['cost']}$)"
             image_path = self.current_item.get('image')
