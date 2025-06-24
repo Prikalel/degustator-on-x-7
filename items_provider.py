@@ -1,18 +1,31 @@
 # items_provider.py
+from langchain_llm7 import ChatLLM7
+from langchain_core.messages import HumanMessage
 import random
+import pollinations
+from PIL import Image
+
+import uuid
+llm = ChatLLM7()
+model = pollinations.Image()
+
+
+def get_text():
+    response = llm.invoke([HumanMessage(content="Дай ОДНО случайное короткое название на русском инопланетного гриба, камня, предмета или жидкости, который может быть съеден. 1-2 слова. Перед самим названием укажи что это: гриб, камень, жидкость, растение?")])
+    return response.content
+
+def get_image(name):
+    response = llm.invoke([HumanMessage(content="Создай красочное краткое описание инопланетного предмета на английском языке: " + name)])
+    prompt = response.content
+    image = model(prompt)
+    img_name = f"img+{uuid.uuid4()}.png"
+    image.save(img_name)
+    return img_name
 
 def get_random_item():
-    # Example items, extend with real data and images as needed
-    items = [
-        {
-            "name": "Светящийся гриб",
-            "image": "mushroom.png",
-            "cost": 50,
-        },
-        {
-            "name": "Фиолетовый гель",
-            "image": "poition.png",
-            "cost": 30
-        },
-    ]
-    return random.choice(items)
+    name = get_text()
+    return {
+            "name": name,
+            "image": get_image(name),
+            "cost": random.choice([50, 100, 150, 200])
+        }

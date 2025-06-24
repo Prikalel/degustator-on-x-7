@@ -49,6 +49,7 @@ footer_text = "Добро пожаловать на Планету X-7!\nвы - 
 game_active = False
 game_ui_object = None
 game_state = {
+    'rounds_count': 0,
     'effects': [],
     'starvation': 0,
     'money': 50
@@ -59,6 +60,7 @@ def reset_game():
     global game_ui_object
     game_ui_object = None
     game_state = {
+        'rounds_count': 0,
         'effects': [],
         'starvation': 3,
         'money': 50
@@ -97,15 +99,25 @@ def main_menu():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            if play_button.is_clicked(event):
+            if play_button.is_clicked(event) and not game_active:
+                import tkinter as tk
+                from tkinter import messagebox
+                root = tk.Tk()
+                root.withdraw()  # Hide the main window
+                messagebox.showinfo("Подождите", "Игра загружается...\nЭто может занять некоторое время.\nКак только мы закончим я дам вам знать!")
+                root.destroy()
                 print("Starting game...")
                 game_active = True
                 reset_game()
                 game_ui_object = game_ui.GameUI()
+                root = tk.Tk()
+                root.withdraw()  # Hide the main window
+                messagebox.showinfo("Готово", "Игра загрузилась!\nВы можете начать играть.\nПомните что как только ваш голод упадёт до нуля - вы проиграли!")
+                root.destroy()
             if tutor_button.is_clicked(event):
                 show_tutorial()
             if game_active and game_ui_object:
-                game_ui_object.handle_event(event)
+                game_ui_object.handle_event(event, game_state)
 
         # Draw game UI if active
         if game_active:

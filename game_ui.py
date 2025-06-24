@@ -20,11 +20,31 @@ class GameUI:
     def is_button_clicked(event, rect: pygame.Rect) -> bool:
         return event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and rect.collidepoint(event.pos)
 
-    def handle_event(self, event):
+    def handle_event(self, event, game_state):
         if GameUI.is_button_clicked(event, self.eat_button):
             print("eat!")
+            game_state['rounds_count'] = game_state['rounds_count'] + 1
         elif GameUI.is_button_clicked(event, self.skip_button):
-            print("skip!")
+            starvation = game_state.get('starvation', 0)
+            if starvation > 0:
+                # Decrease starvation by 1
+                game_state['starvation'] = starvation - 1
+                # Get next item
+                self.set_new_item()
+                print("skip!")
+            else:
+                # Game over - starvation is 0
+                rounds_count = game_state.get('rounds_count', 0)
+                import tkinter as tk
+                from tkinter import messagebox
+                root = tk.Tk()
+                root.withdraw()  # Hide the main window
+                messagebox.showinfo("Проигрыш", f"Ты проиграл! Завершённые раунды: {rounds_count}")
+                root.destroy()
+                pygame.quit()
+                import sys
+                sys.exit()
+            game_state['rounds_count'] = game_state['rounds_count'] + 1
         elif GameUI.is_button_clicked(event, self.shop_button):
             print("shop!")
 
@@ -32,7 +52,7 @@ class GameUI:
         if image_path not in self._cached_images:
             try:
                 image = pygame.image.load(image_path)
-                image = pygame.transform.scale(image, (100, 100))
+                image = pygame.transform.scale(image, (200, 200))
                 self._cached_images[image_path] = image
             except pygame.error as e:
                 print(f"Error loading image: {e}")
@@ -76,7 +96,6 @@ class GameUI:
             effect_text = self.FONT.render(effect_name, True, BLACK)
             screen.blit(effect_text, (50, effect_y))
             effect_y += 30
-
         starvation = game_state.get('starvation', 0)
         max_starvation = 3
         if starvation > max_starvation:
