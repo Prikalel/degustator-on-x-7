@@ -67,20 +67,21 @@ class ImageListDialog:
         # For demo purposes, create colored squares instead of loading actual images
         self.photo_references = []  # Keep references to prevent garbage collection
         
+        # Create a single IntVar for all radio buttons
+        self.selection_var = tk.IntVar(value=-1)
+
         for i, item in enumerate(image_data):
             # Create frame for each item
             item_frame = ttk.Frame(self.scrollable_frame)
             item_frame.pack(fill=tk.X, pady=5)
             
-            # Use a variable to track selection
-            var = tk.BooleanVar()
-            
-            # Create radio button for selection
+            # Create radio button for selection using the shared variable
             radio = ttk.Radiobutton(
                 item_frame, 
                 text=item["name"],
-                variable=var,
-                command=lambda idx=i: self.select_item(idx)
+                variable=self.selection_var,
+                value=i,
+                command=self.on_selection_change
             )
             radio.pack(side=tk.LEFT, padx=(0, 10))
             
@@ -102,13 +103,13 @@ class ImageListDialog:
             image_label.pack(side=tk.LEFT)
         self.image_data = image_data
             
-    def select_item(self, index):
-        self.selected_item = index
+    def on_selection_change(self):
+        self.selected_item = self.selection_var.get()
         # Enable the buy button when an item is selected
         self.buy_button.config(state=tk.NORMAL)
         
     def buy_item(self):
-        if self.selected_item is not None:
+        if self.selected_item is not None and self.selected_item >= 0:
             print(f"Buying item {self.selected_item}")
             self.bouth_item = list(filter(lambda x: self.image_data[self.selected_item]["path"] == x["item"]["image"], self._cached_mappings ))[0]
             self.root.destroy()

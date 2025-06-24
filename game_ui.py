@@ -95,11 +95,17 @@ class GameUI:
                     if app.bouth_item["item"]["cost"]*2 > game_state["money"]:
                         root = tk.Tk()
                         root.withdraw()  # Hide the main window
-                        messagebox.showinfo("Мало денег", "Вы не можете купить " + app.bouth_item["item"]["name"] + ' потому что он стоит ' + str(app.bouth_item["item"]["cost"]) + " а у вас всего " + str(game_state["money"]))
+                        messagebox.showinfo("Мало денег", "Вы не можете купить " + app.bouth_item["item"]["name"] + ' потому что он стоит ' + str(app.bouth_item["item"]["cost"]*2) + " а у вас всего " + str(game_state["money"]))
                         root.destroy()
                     else:
                         game_state["money"] = game_state["money"] - app.bouth_item["item"]["cost"]*2
                         self.eat(game_state, app.bouth_item["item"], False)
+                        if "count_bouth" in app.bouth_item["item"]:
+                            app.bouth_item["item"]["count_bouth"] = app.bouth_item["item"]["count_bouth"] + 1
+                        else:
+                            app.bouth_item["item"]["count_bouth"] = 1
+                        if (app.bouth_item["item"]["count_bouth"]>=3):
+                            self._cached_mappings = [i for i in self._cached_mappings if i["item"] != app.bouth_item["item"]]
             self.is_in_shop = False
             print("done shoping ")
 
