@@ -32,16 +32,16 @@ class GameUI:
         if starvation > max_starvation:
             starvation = max_starvation
         progress_width = (starvation / max_starvation) * 200
-        pygame.draw.rect(screen, BLACK, (50, 300, 200, 20), 2)
-        pygame.draw.rect(screen, LIGHT_GREEN, (50, 300, progress_width, 20))
+        pygame.draw.rect(screen, BLACK, (10, 10, 200, 20), 2)
+        pygame.draw.rect(screen, LIGHT_GREEN, (10, 10, progress_width, 20))
 
         money = game_state.get('money', 0)
         money_text = self.FONT.render(f"Баланс: ${money}", True, YELLOW)
-        screen.blit(money_text, (400, 50))
+        screen.blit(money_text, (400, 10))
 
-        shop_button = pygame.Rect(650, 50, 100, 30)
+        shop_button = pygame.Rect(650, 10, 100, 30)
         pygame.draw.rect(screen, LIGHT_PURPLE, shop_button)
-        shop_text = self.FONT.render("Магаз", True, BLACK)
+        shop_text = self.FONT.render("Магаз", True, YELLOW)
         screen.blit(shop_text, shop_text.get_rect(center=shop_button.center))
 
         eat_button = pygame.Rect(300, 400, 100, 50)

@@ -59,7 +59,7 @@ def reset_game():
     game_state = {
         'current_item': None,
         'effects': [],
-        'starvation': 0,
+        'starvation': 3,
         'money': 50
     }
 
