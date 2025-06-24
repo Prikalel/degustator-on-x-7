@@ -100,20 +100,10 @@ def main_menu():
                 pygame.quit()
                 sys.exit()
             if play_button.is_clicked(event) and not game_active:
-                import tkinter as tk
-                from tkinter import messagebox
-                root = tk.Tk()
-                root.withdraw()  # Hide the main window
-                messagebox.showinfo("Подождите", "Игра загружается...\nЭто может занять некоторое время.\nКак только мы закончим я дам вам знать!")
-                root.destroy()
                 print("Starting game...")
                 game_active = True
                 reset_game()
                 game_ui_object = game_ui.GameUI()
-                root = tk.Tk()
-                root.withdraw()  # Hide the main window
-                messagebox.showinfo("Готово", "Игра загрузилась!\nВы можете начать играть.\nПомните что как только ваш голод упадёт до нуля - вы проиграли!")
-                root.destroy()
             if tutor_button.is_clicked(event):
                 show_tutorial()
             if game_active and game_ui_object:

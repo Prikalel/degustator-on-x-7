@@ -3,12 +3,19 @@ from pygame.locals import *
 from colors import WHITE, BLACK, GRAY, LIGHT_GREEN, DARK_PURPLE, LIGHT_PURPLE, YELLOW
 from window import WIDTH, HEIGHT
 import items_provider
+import threading
+import time
+from PIL import Image
 
 class GameUI:
     FONT = pygame.font.SysFont('Raleway', 24)
 
     def __init__(self):
         self.current_item = None
+        self.is_loading = False
+        self.loading_frames = self.load_loading_animation()
+        self.current_loading_frame = 0
+        self.loading_animation_timer = 0
         self.set_new_item()
         self.eat_button = pygame.Rect(300, 400, 140, 50)
         self.eat_button_text = "Съесть"
@@ -16,11 +23,37 @@ class GameUI:
         self.shop_button = pygame.Rect(650, 10, 100, 30)
         self._cached_images = {}
 
+    def load_loading_animation(self):
+        try:
+            # Load the loading animation frames - adjust as needed based on your gif structure
+            # This is a simplified approach; you might need to use a library like PIL for actual gif parsing
+            im = Image.open("loading.gif")
+            frames = []
+            try:
+                while 1:
+                    im.seek(im.tell()+1)
+                    # add "im" to frames
+                    bytess = im.tobytes()
+                    frames.append(pygame.transform.scale(pygame.image.frombytes(bytess, (512, 512), "RGBA"), (100, 100)))
+            except EOFError:
+                pass
+            return frames
+        except pygame.error as e:
+            print(f"Error loading loading animation: {e}")
+            # Create a fallback loading indicator
+            surf = pygame.Surface((100, 100), pygame.SRCALPHA)
+            pygame.draw.circle(surf, LIGHT_PURPLE, (50, 50), 40)
+            return [surf]
+
     @staticmethod
     def is_button_clicked(event, rect: pygame.Rect) -> bool:
         return event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and rect.collidepoint(event.pos)
 
     def handle_event(self, event, game_state):
+        # Ignore button clicks when loading
+        if self.is_loading:
+            return
+            
         if GameUI.is_button_clicked(event, self.eat_button):
             print("eat!")
             game_state['rounds_count'] = game_state['rounds_count'] + 1
@@ -60,7 +93,26 @@ class GameUI:
         return self._cached_images[image_path]
 
     def set_new_item(self):
-        self.current_item = items_provider.get_random_item()
+        # Set loading state
+        self.is_loading = True
+        
+        # Create a thread to fetch the item
+        def fetch_item():
+            # Get the item
+            self.current_item = items_provider.get_random_item()
+            # Reset loading state
+            self.is_loading = False
+            
+        # Start the thread
+        threading.Thread(target=fetch_item).start()
+
+    def update_loading_animation(self):
+        # Update the loading animation frame
+        if self.is_loading:
+            current_time = pygame.time.get_ticks()
+            if current_time - self.loading_animation_timer > 100:  # Change frame every 100ms
+                self.current_loading_frame = (self.current_loading_frame + 1) % len(self.loading_frames)
+                self.loading_animation_timer = current_time
 
     def draw_game_ui(self, screen, game_state):
         try:
@@ -71,7 +123,19 @@ class GameUI:
             print(f"Could not load image: {e}")
             screen.fill(WHITE)
 
-        if self.current_item:
+        # Update loading animation if we're in loading state
+        self.update_loading_animation()
+
+        if self.is_loading:
+            # Draw loading animation
+            loading_frame = self.loading_frames[self.current_loading_frame]
+            loading_rect = loading_frame.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+            screen.blit(loading_frame, loading_rect)
+            
+            # Show loading text
+            loading_text = self.FONT.render("Loading...", True, LIGHT_GREEN)
+            screen.blit(loading_text, (WIDTH // 2 - loading_text.get_width() // 2, HEIGHT // 2 + 60))
+        elif self.current_item:
             item_name = self.current_item.get('name', 'Unknown Item')
             item_text = self.FONT.render(item_name, True, LIGHT_GREEN)
             screen.blit(item_text, (WIDTH // 2 - item_text.get_width() // 2, 70))
