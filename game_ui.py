@@ -10,9 +10,10 @@ class GameUI:
     def __init__(self):
         self.current_item = None
         self.set_new_item()
-        self.eat_button = pygame.Rect(300, 400, 110, 50)
+        self.eat_button = pygame.Rect(300, 400, 140, 50)
         self.eat_button_text = "Съесть"
-        self.skip_button = pygame.Rect(450, 400, 110, 50)
+        self.skip_button = pygame.Rect(450, 400, 140, 50)
+        self.shop_button = pygame.Rect(650, 10, 100, 30)
 
     @staticmethod
     def is_button_clicked(event, rect: pygame.Rect) -> bool:
@@ -23,6 +24,8 @@ class GameUI:
             print("eat!")
         elif GameUI.is_button_clicked(event, self.skip_button):
             print("skip!")
+        elif GameUI.is_button_clicked(event, self.shop_button):
+            print("shop!")
 
     def set_new_item(self):
         self.current_item = items_provider.get_random_item()
@@ -38,7 +41,7 @@ class GameUI:
 
         if self.current_item:
             item_name = self.current_item.get('name', 'Unknown Item')
-            item_text = self.FONT.render(item_name, True, BLACK)
+            item_text = self.FONT.render(item_name, True, LIGHT_GREEN)
             screen.blit(item_text, (WIDTH // 2 - item_text.get_width() // 2, 70))
             self.eat_button_text = f"Съесть (+{self.current_item['cost']}$)"
         else:
@@ -71,16 +74,33 @@ class GameUI:
         money_text = self.FONT.render(f"Баланс: ${money}", True, YELLOW)
         screen.blit(money_text, (400, 10))
 
-        shop_button = pygame.Rect(650, 10, 100, 30)
-        pygame.draw.rect(screen, LIGHT_PURPLE, shop_button)
+        pygame.draw.rect(screen, LIGHT_PURPLE, self.shop_button)
         shop_text = self.FONT.render("Магаз", True, YELLOW)
-        screen.blit(shop_text, shop_text.get_rect(center=shop_button.center))
+        screen.blit(shop_text, shop_text.get_rect(center=self.shop_button.center))
 
         # Draw and update eat button
         pygame.draw.rect(screen, GRAY, self.eat_button)
         eat_text_surf = self.FONT.render(self.eat_button_text, True, BLACK)
         screen.blit(eat_text_surf, eat_text_surf.get_rect(center=self.eat_button.center))
 
+        # Draw and update skip button with multiline label
         pygame.draw.rect(screen, GRAY, self.skip_button)
-        skip_text = self.FONT.render("Пропустить", True, BLACK)
-        screen.blit(skip_text, skip_text.get_rect(center=self.skip_button.center))
+        skip_text_lines = ["Пропустить", "(-1голод)"]
+        line_spacing = 4  # space between lines in pixels
+        total_height = 0
+        rendered_lines = []
+
+        # Render each line
+        for line in skip_text_lines:
+            surf = self.FONT.render(line, True, BLACK)
+            rendered_lines.append(surf)
+            total_height += surf.get_height()
+
+        # Starting y position to center the multiline text within the button
+        y_offset = self.skip_button.centery - total_height // 2
+
+        for surf in rendered_lines:
+            rect = surf.get_rect(center=(self.skip_button.centerx, y_offset + surf.get_height() // 2))
+            screen.blit(surf, rect)
+            y_offset += surf.get_height() + line_spacing
+        #screen.blit(skip_text, skip_text.get_rect(center=self.skip_button.center))
