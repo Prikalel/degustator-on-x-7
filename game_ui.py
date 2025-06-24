@@ -1,12 +1,10 @@
 import pygame
 from pygame.locals import *
-from colors import WHITE, BLACK, GRAY, LIGHT_GREEN, DARK_PURPLE, LIGHT_PURPLE
+from colors import WHITE, BLACK, GRAY, LIGHT_GREEN, DARK_PURPLE, LIGHT_PURPLE, YELLOW
 from window import WIDTH, HEIGHT
 
 class GameUI:
-    FOOTER_FONT = pygame.font.SysFont('Raleway', 24, bold=True)
-    FONT = pygame.font.SysFont('Raleway', 24, bold=True, italic=True)
-    TITLE_FONT = pygame.font.Font(None, 64)
+    FONT = pygame.font.SysFont('Raleway', 24)
 
     def draw_game_ui(self, screen, game_state):
         try:
@@ -38,12 +36,12 @@ class GameUI:
         pygame.draw.rect(screen, LIGHT_GREEN, (50, 300, progress_width, 20))
 
         money = game_state.get('money', 0)
-        money_text = self.FONT.render(f"Money: ${money}", True, BLACK)
+        money_text = self.FONT.render(f"Баланс: ${money}", True, YELLOW)
         screen.blit(money_text, (400, 50))
 
         shop_button = pygame.Rect(650, 50, 100, 30)
         pygame.draw.rect(screen, LIGHT_PURPLE, shop_button)
-        shop_text = self.FONT.render("Shop", True, BLACK)
+        shop_text = self.FONT.render("Магаз", True, BLACK)
         screen.blit(shop_text, shop_text.get_rect(center=shop_button.center))
 
         eat_button = pygame.Rect(300, 400, 100, 50)
