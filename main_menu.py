@@ -12,7 +12,7 @@ import game_ui  # Import the game UI module
 SCREEN = pygame.display.set_mode((WIDTH, HEIGHT))
 background = pygame.image.load('main-menu-background.jpg')
 background = pygame.transform.scale(background, (WIDTH, HEIGHT))
-pygame.display.set_caption("Digustator - Main Menu")
+pygame.display.set_caption("Дигустатор")
 
 
 # Fonts
@@ -47,6 +47,7 @@ footer_text = "Добро пожаловать на Планету X-7!\nвы - 
 
 # Game state management
 game_active = False
+game_ui_object = None
 game_state = {
     'current_item': None,
     'effects': [],
@@ -56,6 +57,8 @@ game_state = {
 
 def reset_game():
     global game_state
+    global game_ui_object
+    game_ui_object = None
     game_state = {
         'current_item': None,
         'effects': [],
@@ -89,6 +92,7 @@ def show_tutorial():
 
 def main_menu():
     global game_active
+    global game_ui_object
     clock = pygame.time.Clock()
     while True:
         for event in pygame.event.get():
@@ -99,17 +103,15 @@ def main_menu():
                 print("Starting game...")
                 game_active = True
                 reset_game()
+                game_ui_object = game_ui.GameUI()
             if tutor_button.is_clicked(event):
                 show_tutorial()
-            # Handle game UI interactions if active
-            if game_active and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                # Check if Eat or Skip buttons were clicked
-                # This would be connected to actual game logic
-                pass
+            if game_active and game_ui_object:
+                game_ui_object.handle_event(event)
 
         # Draw game UI if active
         if game_active:
-            game_ui.GameUI().draw_game_ui(SCREEN, game_state)
+            game_ui_object.draw_game_ui(SCREEN, game_state)
         else:
             # Draw background
             SCREEN.blit(background, (0, 0))
