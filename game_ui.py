@@ -103,4 +103,3 @@ class GameUI:
             rect = surf.get_rect(center=(self.skip_button.centerx, y_offset + surf.get_height() // 2))
             screen.blit(surf, rect)
             y_offset += surf.get_height() + line_spacing
-        #screen.blit(skip_text, skip_text.get_rect(center=self.skip_button.center))
