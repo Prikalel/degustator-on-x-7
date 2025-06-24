@@ -1,3 +1,5 @@
+import tkinter as tk
+from tkinter import messagebox
 import pygame
 from pygame.locals import *
 from colors import WHITE, BLACK, GRAY, LIGHT_GREEN, DARK_PURPLE, LIGHT_PURPLE, YELLOW
@@ -9,6 +11,7 @@ import threading
 import time
 from PIL import Image
 import random
+from shop import ImageListDialog
 
 max_starvation = 3
 
@@ -18,6 +21,7 @@ class GameUI:
     def __init__(self):
         self.current_item = None
         self.is_loading = False
+        self.is_in_shop = False
         self.loading_frames = self.load_loading_animation()
         self.current_loading_frame = 0
         self.loading_animation_timer = 0
@@ -57,62 +61,11 @@ class GameUI:
 
     def handle_event(self, event, game_state):
         # Ignore button clicks when loading
-        if self.is_loading:
+        if self.is_loading or self.is_in_shop:
             return
             
         if GameUI.is_button_clicked(event, self.eat_button):
-            print("eat! starvation: " + str(game_state['starvation']))
-        
-            # Check if current item is in cached mappings to use the same effect
-            effect = None
-            for mapping in self._cached_mappings:
-                if mapping['item'] == self.current_item:
-                    effect = mapping['effect']
-                    print("Using cached effect for repeated item")
-                    break
-            
-            # If not found in cache, get a new random effect
-            if effect is None:
-                effect = effect_provider.get_random_effect()
-                
-                # Save item and effect mapping for future reference
-                if self.current_item:
-                    self._cached_mappings.append({
-                        'item': self.current_item,
-                        'effect': effect
-                    })
-
-            # Handle effect
-            if effect == Effect.Food:
-                # Increase starvation for food
-                game_state['starvation'] = game_state.get('starvation', 0) + 1
-                if (game_state['starvation'] > max_starvation):
-                    game_state['starvation'] = game_state['starvation'] - 1
-            elif effect == Effect.Toxic:
-                # Decrease starvation for toxic
-                starvation = game_state.get('starvation', 0) - 1
-                game_state['starvation'] = max(0, starvation)
-
-                # Show message about toxic food
-                import tkinter as tk
-                from tkinter import messagebox
-                root = tk.Tk()
-                root.withdraw()  # Hide the main window
-                messagebox.showinfo("Отравление", "Вы съели несъедобное блюдо! Ваш голод понизился")
-                root.destroy()
-
-                # Check if starvation reached 0
-                if starvation < 0:
-                    self._show_game_over(game_state)
-                    return
-
-            # Increment rounds count
-            game_state['money'] = game_state['money'] + self.current_item['cost']
-            game_state['rounds_count'] = game_state['rounds_count'] + 1
-
-            # Get next item
-            self.set_new_item()
-            print("starvation: " + str(game_state['starvation']))
+            self.eat(game_state, self.current_item, True)
         elif GameUI.is_button_clicked(event, self.skip_button):
             starvation = game_state.get('starvation', 0)
             if starvation > 0:
@@ -128,6 +81,81 @@ class GameUI:
             game_state['rounds_count'] = game_state['rounds_count'] + 1
         elif GameUI.is_button_clicked(event, self.shop_button):
             print("shop!")
+            self.is_in_shop = True
+            if len(self._cached_mappings) == 0:
+                root = tk.Tk()
+                root.withdraw()  # Hide the main window
+                messagebox.showinfo("Магазин", "В магазине пусто. Сделайте хотя бы 1 выбор!")
+                root.destroy()
+            else:
+                root = tk.Tk()
+                app = ImageListDialog(root, self._cached_mappings)
+                root.mainloop()
+                if app.bouth_item:
+                    if app.bouth_item["item"]["cost"]*2 > game_state["money"]:
+                        root = tk.Tk()
+                        root.withdraw()  # Hide the main window
+                        messagebox.showinfo("Мало денег", "Вы не можете купить " + app.bouth_item["item"]["name"] + ' потому что он стоит ' + str(app.bouth_item["item"]["cost"]) + " а у вас всего " + str(game_state["money"]))
+                        root.destroy()
+                    else:
+                        game_state["money"] = game_state["money"] - app.bouth_item["item"]["cost"]*2
+                        self.eat(game_state, app.bouth_item["item"], False)
+            self.is_in_shop = False
+            print("done shoping ")
+
+    def eat(self, game_state, item, increment_cost: bool):
+        print("eat! starvation: " + str(game_state['starvation']))
+        
+        # Check if current item is in cached mappings to use the same effect
+        effect = None
+        for mapping in self._cached_mappings:
+            if mapping['item'] == item:
+                effect = mapping['effect']
+                print("Using cached effect for repeated item")
+                break
+        
+        # If not found in cache, get a new random effect
+        if effect is None:
+            effect = effect_provider.get_random_effect()
+            
+            # Save item and effect mapping for future reference
+            if item:
+                print("Added item " + item["name"])
+                self._cached_mappings.append({
+                    'item': item,
+                    'effect': effect
+                })
+
+        # Handle effect
+        if effect == Effect.Food:
+            # Increase starvation for food
+            game_state['starvation'] = game_state.get('starvation', 0) + 1
+            if (game_state['starvation'] > max_starvation):
+                game_state['starvation'] = game_state['starvation'] - 1
+        elif effect == Effect.Toxic:
+            # Decrease starvation for toxic
+            starvation = game_state.get('starvation', 0) - 1
+            game_state['starvation'] = max(0, starvation)
+
+            # Show message about toxic food
+            root = tk.Tk()
+            root.withdraw()  # Hide the main window
+            messagebox.showinfo("Отравление", "Вы съели несъедобное блюдо! Ваш голод понизился")
+            root.destroy()
+
+            # Check if starvation reached 0
+            if starvation < 0:
+                self._show_game_over(game_state)
+                return
+
+        # Increment rounds count
+        if (increment_cost):
+            game_state['money'] = game_state['money'] + item['cost']
+            game_state['rounds_count'] = game_state['rounds_count'] + 1
+
+            # Get next item
+            self.set_new_item()
+        print("starvation: " + str(game_state['starvation']))
 
     def load_image(self, image_path):
         if image_path not in self._cached_images:
@@ -177,6 +205,9 @@ class GameUI:
         except pygame.error as e:
             print(f"Could not load image: {e}")
             screen.fill(WHITE)
+
+        if self.is_in_shop:
+            return
 
         # Update loading animation if we're in loading state
         self.update_loading_animation()
