@@ -31,6 +31,10 @@ class GameUI:
         max_starvation = 3
         if starvation > max_starvation:
             starvation = max_starvation
+
+        starvation_label = self.FONT.render("Голод", True, BLACK)
+        screen.blit(starvation_label, (10, 35))
+
         progress_width = (starvation / max_starvation) * 200
         pygame.draw.rect(screen, BLACK, (10, 10, 200, 20), 2)
         pygame.draw.rect(screen, LIGHT_GREEN, (10, 10, progress_width, 20))
