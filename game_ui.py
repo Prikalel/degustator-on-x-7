@@ -13,6 +13,7 @@ from PIL import Image
 import random
 from shop import ImageListDialog
 from difficulty_multiplyer import get_difficulty
+import pygame.mixer
 
 max_starvation = 3
 
@@ -20,6 +21,8 @@ class GameUI:
     FONT = pygame.font.SysFont('Raleway', 24)
 
     def __init__(self):
+        self.food_sound = pygame.mixer.Sound("nom-nom-nom.mp3")
+        self.toxic_sound = pygame.mixer.Sound("damage.mp3")
         self.current_item = None
         self.is_loading = False
         self.is_in_shop = False
@@ -139,6 +142,8 @@ class GameUI:
             game_state['starvation'] = game_state.get('starvation', 0) + 1
             if (game_state['starvation'] > max_starvation):
                 game_state['starvation'] = game_state['starvation'] - 1
+            else:
+                self.food_sound.play()
         elif effect == Effect.Toxic:
             # Decrease starvation for toxic
             starvation = game_state.get('starvation', 0) - 1
@@ -154,6 +159,8 @@ class GameUI:
             if starvation < 0:
                 self._show_game_over(game_state)
                 return
+            else:
+                self.toxic_sound.play()
 
         # Increment rounds count
         if (increment_cost):
