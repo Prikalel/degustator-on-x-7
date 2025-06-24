@@ -49,7 +49,6 @@ footer_text = "Добро пожаловать на Планету X-7!\nвы - 
 game_active = False
 game_ui_object = None
 game_state = {
-    'current_item': None,
     'effects': [],
     'starvation': 0,
     'money': 50
@@ -60,7 +59,6 @@ def reset_game():
     global game_ui_object
     game_ui_object = None
     game_state = {
-        'current_item': None,
         'effects': [],
         'starvation': 3,
         'money': 50
