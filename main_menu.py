@@ -1,6 +1,7 @@
 import pygame
 import sys
 from colors import WHITE, LIGHT_PURPLE, BLACK, GRAY, LIGHT_GREEN, DARK_PURPLE
+from window import WIDTH, HEIGHT
 
 # Initialize Pygame
 pygame.init()
@@ -8,7 +9,6 @@ pygame.init()
 import game_ui  # Import the game UI module
 
 # Screen dimensions
-WIDTH, HEIGHT = 800, 600
 SCREEN = pygame.display.set_mode((WIDTH, HEIGHT))
 background = pygame.image.load('main-menu-background.jpg')
 background = pygame.transform.scale(background, (WIDTH, HEIGHT))

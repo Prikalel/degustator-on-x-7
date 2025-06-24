@@ -1,12 +1,11 @@
 import pygame
 from pygame.locals import *
 from colors import WHITE, BLACK, GRAY, LIGHT_GREEN, DARK_PURPLE, LIGHT_PURPLE
-
-WIDTH, HEIGHT = 800, 600
+from window import WIDTH, HEIGHT
 
 class GameUI:
     FOOTER_FONT = pygame.font.SysFont('Raleway', 24, bold=True)
-    FONT = pygame.font.SysFont('SimSun', 24, bold=True, italic=True)
+    FONT = pygame.font.SysFont('Raleway', 24, bold=True, italic=True)
     TITLE_FONT = pygame.font.Font(None, 64)
 
     def draw_game_ui(self, screen, game_state):
