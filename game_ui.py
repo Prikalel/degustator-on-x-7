@@ -14,6 +14,7 @@ class GameUI:
         self.eat_button_text = "Съесть"
         self.skip_button = pygame.Rect(450, 400, 140, 50)
         self.shop_button = pygame.Rect(650, 10, 100, 30)
+        self._cached_images = {}
 
     @staticmethod
     def is_button_clicked(event, rect: pygame.Rect) -> bool:
@@ -26,6 +27,17 @@ class GameUI:
             print("skip!")
         elif GameUI.is_button_clicked(event, self.shop_button):
             print("shop!")
+
+    def load_image(self, image_path):
+        if image_path not in self._cached_images:
+            try:
+                image = pygame.image.load(image_path)
+                image = pygame.transform.scale(image, (100, 100))
+                self._cached_images[image_path] = image
+            except pygame.error as e:
+                print(f"Error loading image: {e}")
+                return
+        return self._cached_images[image_path]
 
     def set_new_item(self):
         self.current_item = items_provider.get_random_item()
@@ -44,6 +56,17 @@ class GameUI:
             item_text = self.FONT.render(item_name, True, LIGHT_GREEN)
             screen.blit(item_text, (WIDTH // 2 - item_text.get_width() // 2, 70))
             self.eat_button_text = f"Съесть (+{self.current_item['cost']}$)"
+            image_path = self.current_item.get('image')
+            if image_path:
+                try:
+                    # Load the image if not already loaded - optional: cache images for efficiency
+                    item_image = self.load_image(image_path)
+                    # Calculate position to center the image
+                    image_rect = item_image.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+                    # Blit the image onto the screen
+                    screen.blit(item_image, image_rect)
+                except pygame.error as e:
+                    print(f"Error loading item image '{image_path}': {e}")
         else:
             self.eat_button_text = "Съесть"
 

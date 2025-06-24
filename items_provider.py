@@ -5,13 +5,13 @@ def get_random_item():
     # Example items, extend with real data and images as needed
     items = [
         {
-            "name": "Glowing Mushroom",
-            "visual": "Pulsating blue cap with yellow spots, emits soft hum",
+            "name": "Светящийся гриб",
+            "image": "mushroom.png",
             "cost": 50,
         },
         {
-            "name": "Rocky Sludge",
-            "visual": "Crystallized purple gel with embedded quartz fragments",
+            "name": "Фиолетовый гель",
+            "image": "poition.png",
             "cost": 30
         },
     ]
