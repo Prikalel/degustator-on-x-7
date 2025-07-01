@@ -115,13 +115,14 @@ class GameUI:
 
     def eat(self, game_state, item, increment_cost: bool):
         print("eat! starvation: " + str(game_state['starvation']))
-        
+        already_exists: bool = False
         # Check if current item is in cached mappings to use the same effect
         effect = None
         for mapping in self._cached_mappings:
             if mapping['item'] == item:
                 effect = mapping['effect']
                 print("Using cached effect for repeated item")
+                already_exists = True
                 break
         
         # If not found in cache, get a new random effect
@@ -146,13 +147,13 @@ class GameUI:
                 self.food_sound.play()
         elif effect == Effect.Toxic:
             # Decrease starvation for toxic
-            starvation = game_state.get('starvation', 0) - 1
+            starvation = game_state.get('starvation', 0) - (2 if already_exists else 1)
             game_state['starvation'] = max(0, starvation)
 
             # Show message about toxic food
             root = tk.Tk()
             root.withdraw()  # Hide the main window
-            messagebox.showinfo("Отравление", "Вы съели несъедобное блюдо! Ваш голод понизился")
+            messagebox.showinfo("Отравление", "Вы съели очень несъедобное блюдо! Голод понизился значительно" if already_exists else "Вы съели несъедобное блюдо! Ваш голод понизился")
             root.destroy()
 
             # Check if starvation reached 0

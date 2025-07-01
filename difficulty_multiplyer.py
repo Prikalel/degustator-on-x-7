@@ -4,4 +4,6 @@ def get_difficulty(game_rounds: int) -> int:
         return 3
     elif (game_rounds > 10):
         return 4
+    elif (game_rounds > 15):
+        return 6
     return 2
