@@ -14,8 +14,14 @@ import random
 from shop import ImageListDialog
 from difficulty_multiplyer import get_difficulty
 import pygame.mixer
+from doti18n import LocaleData
+import main_menu  # To access the selected_language
 
 max_starvation = 3
+
+# Initialize translator (use the same language selected in main_menu)
+locale_data = LocaleData(locales_dir='locales/', default_locale='en')
+translator = locale_data.get_translation(main_menu.selected_language)
 
 class GameUI:
     FONT = pygame.font.SysFont('Raleway', 24)
@@ -32,7 +38,7 @@ class GameUI:
         self._cached_mappings = []
         self.set_new_item()
         self.eat_button = pygame.Rect(300, 400, 140, 50)
-        self.eat_button_text = "Съесть"
+        self.eat_button_text = translator.main_menu.game.eat_button
         self.skip_button = pygame.Rect(450, 400, 140, 50)
         self.shop_button = pygame.Rect(650, 10, 100, 30)
         self._cached_images = {}
@@ -89,7 +95,7 @@ class GameUI:
             if len(self._cached_mappings) == 0:
                 root = tk.Tk()
                 root.withdraw()  # Hide the main window
-                messagebox.showinfo("Магазин", "В магазине пусто. Сделайте хотя бы 1 выбор!")
+                messagebox.showinfo(translator.shop.title, translator.shop.no_items)
                 root.destroy()
             else:
                 root = tk.Tk()
@@ -99,7 +105,11 @@ class GameUI:
                     if app.bouth_item["item"]["cost"]*get_difficulty(game_state['rounds_count']) > game_state["money"]:
                         root = tk.Tk()
                         root.withdraw()  # Hide the main window
-                        messagebox.showinfo("Мало денег", "Вы не можете купить " + app.bouth_item["item"]["name"] + ' потому что он стоит ' + str(app.bouth_item["item"]["cost"]*get_difficulty(game_state['rounds_count'])) + " а у вас всего " + str(game_state["money"]))
+                        messagebox.showinfo(translator.shop.title, translator.shop.not_enough_money.format(
+                            item_name=app.bouth_item["item"]["name"],
+                            cost=app.bouth_item["item"]["cost"]*get_difficulty(game_state['rounds_count']),
+                            money=game_state["money"]
+                        ))
                         root.destroy()
                     else:
                         game_state["money"] = game_state["money"] - app.bouth_item["item"]["cost"]*get_difficulty(game_state['rounds_count'])
@@ -153,7 +163,8 @@ class GameUI:
             # Show message about toxic food
             root = tk.Tk()
             root.withdraw()  # Hide the main window
-            messagebox.showinfo("Отравление", "Вы съели очень несъедобное блюдо! Голод понизился значительно" if already_exists else "Вы съели несъедобное блюдо! Ваш голод понизился")
+            messagebox.showinfo("Toxic" if main_menu.selected_language == "en" else "Отравление", 
+                               translator.effects.toxic_repeated if already_exists else translator.effects.toxic)
             root.destroy()
 
             # Check if starvation reached 0
@@ -234,7 +245,7 @@ class GameUI:
             screen.blit(loading_frame, loading_rect)
 
             # Show loading text
-            loading_text = self.FONT.render("Ищем что предложить попробовать...", True, BLACK)
+            loading_text = self.FONT.render(translator.main_menu.game.loading_text, True, BLACK)
             screen.blit(loading_text, (WIDTH // 2 - loading_text.get_width() // 2, HEIGHT // 2 + 60))
         elif self.current_item:
             item_name = self.current_item.get('name', 'Unknown Item')
@@ -249,7 +260,7 @@ class GameUI:
             # Draw the text on top of the background
             screen.blit(item_text, item_text.get_rect(center=(WIDTH // 2, 70)))
 
-            self.eat_button_text = f"Съесть (+{self.current_item['cost']}$)"
+            self.eat_button_text = f"{translator.main_menu.game.eat_button} (+{self.current_item['cost']}$)"
             image_path = self.current_item.get('image')
             if image_path:
                 try:
@@ -262,7 +273,7 @@ class GameUI:
                 except pygame.error as e:
                     print(f"Error loading item image '{image_path}': {e}")
         else:
-            self.eat_button_text = "Съесть"
+            self.eat_button_text = translator.main_menu.game.eat_button
 
         effect_y = 200
         for effect in game_state.get('effects', []):
@@ -274,7 +285,7 @@ class GameUI:
         if starvation > max_starvation:
             starvation = max_starvation
 
-        starvation_label = self.FONT.render("Голод", True, BLACK)
+        starvation_label = self.FONT.render(translator.main_menu.game.starvation_label, True, BLACK)
         screen.blit(starvation_label, (10, 35))
 
         progress_width = (starvation / max_starvation) * 200
@@ -282,11 +293,11 @@ class GameUI:
         pygame.draw.rect(screen, LIGHT_GREEN, (10, 10, progress_width, 20))
 
         money = game_state.get('money', 0)
-        money_text = self.FONT.render(f"Баланс: ${money}", True, YELLOW)
+        money_text = self.FONT.render(f"{translator.main_menu.game.money_label}{money}", True, YELLOW)
         screen.blit(money_text, (400, 10))
 
         pygame.draw.rect(screen, LIGHT_PURPLE, self.shop_button)
-        shop_text = self.FONT.render("Магаз", True, YELLOW)
+        shop_text = self.FONT.render(translator.main_menu.shop, True, YELLOW)
         screen.blit(shop_text, shop_text.get_rect(center=self.shop_button.center))
 
         # Draw and update eat button
@@ -296,7 +307,7 @@ class GameUI:
 
         # Draw and update skip button with multiline label
         pygame.draw.rect(screen, GRAY, self.skip_button)
-        skip_text_lines = ["Пропустить", "(-1голод)"]
+        skip_text_lines = [translator.main_menu.game.skip_button, "(-1голод)"]
         line_spacing = 4  # space between lines in pixels
         total_height = 0
         rendered_lines = []
@@ -321,7 +332,8 @@ class GameUI:
         from tkinter import messagebox
         root = tk.Tk()
         root.withdraw()  # Hide the main window
-        messagebox.showinfo("Проигрыш", f"Ты проиграл! Завершённые раунды: {rounds_count}\nИгра закроется, если хочешь начать сначала - перезапусти игру!")
+        messagebox.showinfo(translator.main_menu.game.game_over.title, 
+                           translator.main_menu.game.game_over.message.format(rounds_count=rounds_count))
         root.destroy()
         pygame.quit()
         import sys

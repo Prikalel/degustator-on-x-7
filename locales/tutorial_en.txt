@@ -1,0 +1,18 @@
+## Tutorial
+
+On the new planet X-7, there are many items and things to check for edibility.
+
+Your mission is simple - to determine what is edible and what is not,
+                by eating strange alien substances.
+If you refuse to eat, you won't get money for sustenance.
+
+## Core Mechanics
+
+- Round: In each round, you decide whether to consume the offered item.
+- Choice Result: If you decide to eat, you get money for it.
+- Effect: Eating items is not always safe, so you will be affected
+                by various effects.
+- Hunger: Skipping too many items will lead to starvation and death.
+- Shop: Buy researched items and immediately eat them to
+                avoid dying from hunger!
+Good luck, and try not to die after the first taste!

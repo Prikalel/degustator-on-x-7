@@ -1,41 +1,21 @@
 # items_provider.py
-from langchain_llm7 import ChatLLM7
-from langchain_core.messages import HumanMessage
 import random
-import pollinations
-from PIL import Image
 
-import uuid
-llm = ChatLLM7()
-model = pollinations.Image()
-
-
-def get_text():
-    thing = random.choice(["гриба", "камня", "жидкости", "растения"])
-    response = llm.invoke([HumanMessage(content=f"Дай ОДНО случайное короткое название на русском инопланетного {thing}, которое могло бы быть съедено. 1-2 слова.")])
-    if thing == "гриба":
-        return "Гриб: " + response.content
-    elif thing == "камня":
-        return "Камень: " + response.content
-    elif thing == "жидкости":
-        return "Жидкость: " + response.content
-    elif thing == "растения":
-        return "Растение: " + response.content
-    else:
-        return response.content
-
-def get_image(name):
-    response = llm.invoke([HumanMessage(content="Создай красочное краткое описание инопланетного предмета на английском языке: " + name)])
-    prompt = response.content
-    image = model(prompt)
-    img_name = f"img+{uuid.uuid4()}.png"
-    image.save(img_name)
-    return img_name
+# Predefined list of items for testing
+items = [
+    {"name": "Гриб: Красный кристалл", "cost": 50},
+    {"name": "Гриб: Синий пузырь", "cost": 100},
+    {"name": "Камень: Зеленый осколок", "cost": 150},
+    {"name": "Жидкость: Фиолетовый нектар", "cost": 200},
+    {"name": "Растение: Желтый корень", "cost": 75},
+    {"name": "Гриб: Серебристая шляпка", "cost": 125},
+    {"name": "Камень: Прозрачный куб", "cost": 175},
+    {"name": "Жидкость: Оранжевый гель", "cost": 90},
+]
 
 def get_random_item():
-    name = get_text()
-    return {
-            "name": name,
-            "image": get_image(name),
-            "cost": random.choice([50, 100, 150, 200])
-        }
+    """Return a random item from the predefined list."""
+    item = random.choice(items).copy()  # Make a copy to avoid modifying original
+    # For testing purposes, we'll use a placeholder image
+    item["image"] = "in-game-background.png"  # Using existing image as placeholder
+    return item

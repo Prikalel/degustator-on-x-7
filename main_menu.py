@@ -2,6 +2,8 @@ import pygame
 import sys
 from colors import WHITE, LIGHT_PURPLE, BLACK, GRAY, LIGHT_GREEN, DARK_PURPLE
 from window import WIDTH, HEIGHT
+from doti18n import LocaleData
+import language_selector
 
 # Initialize Pygame
 pygame.init()
@@ -9,11 +11,18 @@ pygame.mixer.init()
 
 import game_ui  # Import the game UI module
 
+# Initialize translator
+locale_data = LocaleData(locales_dir='locales/', default_locale='en')
+selected_language = language_selector.get_language()
+if selected_language is None:
+    selected_language = 'en'  # Default to English if no selection
+translator = locale_data.get_translation(selected_language)
+
 # Screen dimensions
 SCREEN = pygame.display.set_mode((WIDTH, HEIGHT))
 background = pygame.image.load('main-menu-background.jpg')
 background = pygame.transform.scale(background, (WIDTH, HEIGHT))
-pygame.display.set_caption("Дигустатор")
+pygame.display.set_caption(translator.main_menu.title)
 
 pygame.mixer.music.load('background-music.mp3')
 pygame.mixer.music.set_volume(0.5)  # Optional: set volume (0.0 to 1.0)
@@ -44,11 +53,11 @@ class Button:
         return False
 
 # Create buttons
-play_button = Button(300, 200, 200, 50, "Играть")
-tutor_button = Button(300, 300, 200, 50, "Туториал")
+play_button = Button(300, 200, 200, 50, translator.main_menu.play_button)
+tutor_button = Button(300, 300, 200, 50, translator.main_menu.tutorial_button)
 
 # Footer text
-footer_text = "Добро пожаловать на Планету X-7!\nвы - дегустатор, исследователь новой еды для человеческой расы. @velikiy_prikalel"
+footer_text = translator.main_menu.footer
 
 # Game state management
 game_active = False
@@ -75,14 +84,15 @@ def show_tutorial():
     try:
         TUTORIAL_FOND = pygame.font.Font(None, 24)
         TUTORIAL_FOND_BOLD = pygame.font.SysFont(None, 24, bold=True)
-        with open('tutorial.txt', 'r', encoding='utf-8') as file:
+        tutorial_file = f"locales/tutorial_{selected_language}.txt"
+        with open(tutorial_file, 'r', encoding='utf-8') as file:
             content = file.read()
         tutorial_lines = content.split('\n')
         SCREEN.fill(WHITE)
         for i, line in enumerate(tutorial_lines):
             text = (TUTORIAL_FOND_BOLD if line.startswith("##") else TUTORIAL_FOND).render(line, True, BLACK)
             SCREEN.blit(text, (10, 10 + i * 30))
-        back_text = TUTORIAL_FOND.render("Нажмите ESC для возврата в меню", True, LIGHT_GREEN)
+        back_text = TUTORIAL_FOND.render("Press ESC to return to menu" if selected_language == 'en' else "Нажмите ESC для возврата в меню", True, LIGHT_GREEN)
         SCREEN.blit(back_text, (50, 550))
         pygame.display.flip()
         while True:
@@ -124,22 +134,22 @@ def main_menu():
             # Draw title
             # Draw even thicker shadow text (three layers)
             # Outer layer (furtherst from text)
-            shadow_text_outer = TITLE_FONT.render("ДЕГУСТАТОР", True, BLACK)
+            shadow_text_outer = TITLE_FONT.render(translator.main_menu.title, True, BLACK)
             shadow_rect_outer = shadow_text_outer.get_rect(center=(WIDTH//2 + 6, 100 + 6))
             SCREEN.blit(shadow_text_outer, shadow_rect_outer)
             
             # Middle layer (closer to text)
-            shadow_text_middle = TITLE_FONT.render("ДЕГУСТАТОР", True, BLACK)
+            shadow_text_middle = TITLE_FONT.render(translator.main_menu.title, True, BLACK)
             shadow_rect_middle = shadow_text_middle.get_rect(center=(WIDTH//2 + 4, 100 + 4))
             SCREEN.blit(shadow_text_middle, shadow_rect_middle)
             
             # Inner layer (closest to text)
-            shadow_text_inner = TITLE_FONT.render("ДЕГУСТАТОР", True, BLACK)
+            shadow_text_inner = TITLE_FONT.render(translator.main_menu.title, True, BLACK)
             shadow_rect_inner = shadow_text_inner.get_rect(center=(WIDTH//2 + 2, 100 + 2))
             SCREEN.blit(shadow_text_inner, shadow_rect_inner)
             
             # Draw main text
-            title_text = TITLE_FONT.render("ДЕГУСТАТОР", True, LIGHT_PURPLE)
+            title_text = TITLE_FONT.render(translator.main_menu.title, True, LIGHT_PURPLE)
             title_rect = title_text.get_rect(center=(WIDTH//2, 100))
             SCREEN.blit(title_text, title_rect)
 

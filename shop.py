@@ -4,6 +4,12 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 import os
 from difficulty_multiplyer import get_difficulty
+from doti18n import LocaleData
+import main_menu
+
+# Initialize translator (use the same language selected in main_menu)
+locale_data = LocaleData(locales_dir='locales/', default_locale='en')
+translator = locale_data.get_translation(main_menu.selected_language)
 
 class ImageListDialog:
     image_data = []
@@ -13,7 +19,7 @@ class ImageListDialog:
         self._cached_mappings = cached_mappings
         self.round_num = round_num
         self.root = root
-        self.root.title("Покупка предмета!")
+        self.root.title(translator.shop.title)
         self.root.geometry("600x500")
         self.root.resizable(False, False)
         
@@ -51,8 +57,8 @@ class ImageListDialog:
         button_frame.pack(fill=tk.X, pady=(0, 5))
         
         # Create buttons
-        self.buy_button = ttk.Button(button_frame, text="Купить и съесть!", command=self.buy_item, state=tk.DISABLED)
-        cancel_button = ttk.Button(button_frame, text="Отказаться(", command=self.root.destroy)
+        self.buy_button = ttk.Button(button_frame, text=translator.shop.buy_button, command=self.buy_item, state=tk.DISABLED)
+        cancel_button = ttk.Button(button_frame, text=translator.shop.cancel_button, command=self.root.destroy)
         
         # Place buttons
         self.buy_button.pack(side=tk.RIGHT, padx=5)
@@ -63,7 +69,8 @@ class ImageListDialog:
         # For this example, we'll create a list of dummy image data
         image_data = []
         for data in self._cached_mappings:
-            image_data.append({"name": data["item"]["name"] + ' за ' + str(get_difficulty(self.round_num)*data["item"]["cost"]) + "$", "path": data["item"]["image"]})
+            cost_text = ' за ' if main_menu.selected_language == 'ru' else ' for '
+            image_data.append({"name": data["item"]["name"] + cost_text + str(get_difficulty(self.round_num)*data["item"]["cost"]) + "$", "path": data["item"]["image"]})
         
         random.shuffle(image_data)
         # For demo purposes, create colored squares instead of loading actual images
@@ -80,7 +87,7 @@ class ImageListDialog:
             # Create radio button for selection using the shared variable
             radio = ttk.Radiobutton(
                 item_frame, 
-                text=item["name"],
+                text=item["name"] + ' за ' + str(get_difficulty(self.round_num)*item["item"]["cost"]) + "$",
                 variable=self.selection_var,
                 value=i,
                 command=self.on_selection_change
@@ -113,7 +120,12 @@ class ImageListDialog:
     def buy_item(self):
         if self.selected_item is not None and self.selected_item >= 0:
             print(f"Buying item {self.selected_item}")
-            self.bouth_item = list(filter(lambda x: self.image_data[self.selected_item]["path"] == x["item"]["image"], self._cached_mappings ))[0]
+            # Find the matching item in cached mappings
+            selected_image_path = self.image_data[self.selected_item]["path"]
+            for mapping in self._cached_mappings:
+                if mapping["item"]["image"] == selected_image_path:
+                    self.bouth_item = mapping
+                    break
             self.root.destroy()
 
 if __name__ == "__main__":

@@ -1,0 +1,31 @@
+{
+  "main_menu": {
+    "title": "Degustator",
+    "play_button": "Play",
+    "tutorial_button": "Tutorial",
+    "footer": "Welcome to Planet X-7\nYou are a taster, exploring new food for humanity. @velikiy_prikalel",
+    "shop": "Shop",
+    "game": {
+      "eat_button": "Eat",
+      "skip_button": "Skip",
+      "starvation_label": "Hunger",
+      "money_label": "Balance: $",
+      "loading_text": "Looking for something to offer...",
+      "game_over": {
+        "title": "Game Over",
+        "message": "You lost! Completed rounds: {rounds_count}\nThe game will close, if you want to start over - restart the game!"
+      }
+    }
+  },
+  "shop": {
+    "title": "Buy item!",
+    "buy_button": "Buy and eat!",
+    "cancel_button": "Cancel",
+    "no_items": "The shop is empty. Make at least 1 choice first!",
+    "not_enough_money": "You can't buy {item_name} because it costs {cost} but you have {money}"
+  },
+  "effects": {
+    "toxic": "You ate a toxic item! Hunger decreased",
+    "toxic_repeated": "You ate a very toxic item! Hunger decreased significantly"
+  }
+}
