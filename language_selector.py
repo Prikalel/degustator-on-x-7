@@ -3,6 +3,8 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 
 class LanguageSelectionDialog:
+    selected_language = "-"
+
     def __init__(self, root):
         self.root = root
         self.root.title("Select Language / Выберите язык")
@@ -71,8 +73,11 @@ class LanguageSelectionDialog:
 
 def get_language():
     """Show language selection dialog and return selected language code."""
+    if LanguageSelectionDialog.selected_language is not None and LanguageSelectionDialog.selected_language in ["ru", "en"]:
+        return LanguageSelectionDialog.selected_language
     root = tk.Tk()
     app = LanguageSelectionDialog(root)
     root.mainloop()
-    return app.selected_language
+    LanguageSelectionDialog.selected_language = app.selected_language
+    return LanguageSelectionDialog.selected_language
 

@@ -84,7 +84,7 @@ def show_tutorial():
     try:
         TUTORIAL_FOND = pygame.font.Font(None, 24)
         TUTORIAL_FOND_BOLD = pygame.font.SysFont(None, 24, bold=True)
-        tutorial_file = f"locales/tutorial_{selected_language}.txt"
+        tutorial_file = f"tutorial_{selected_language}.txt"
         with open(tutorial_file, 'r', encoding='utf-8') as file:
             content = file.read()
         tutorial_lines = content.split('\n')
