@@ -30,7 +30,7 @@ locales/
 First, you need to initialize the `LocaleData` class with the path to your locales directory and the default locale.
 
 ```python
-from doti18n import LocaleData
+from scripts.doti18n import LocaleData
 
 # Initialize LocaleData with the directory containing your localization files
 locale_data = LocaleData(locales_dir='locales/', default_locale='en')

@@ -1,8 +1,8 @@
 import pygame
 import sys
-from colors import WHITE, LIGHT_PURPLE, BLACK, GRAY, LIGHT_GREEN, DARK_PURPLE
-from window import WIDTH, HEIGHT
-from doti18n import LocaleData
+from scripts.colors import WHITE, LIGHT_PURPLE, BLACK, GRAY, LIGHT_GREEN, DARK_PURPLE
+from scripts.window import WIDTH, HEIGHT
+from scripts.doti18n import LocaleData
 import language_selector
 
 # Initialize Pygame
@@ -133,7 +133,7 @@ def main_menu():
 
             # Draw title
             # Draw even thicker shadow text (three layers)
-            # Outer layer (furtherst from text)
+            # Outer layer (furtherst from scripts.text)
             shadow_text_outer = TITLE_FONT.render(translator.main_menu.title, True, BLACK)
             shadow_rect_outer = shadow_text_outer.get_rect(center=(WIDTH//2 + 6, 100 + 6))
             SCREEN.blit(shadow_text_outer, shadow_rect_outer)
@@ -163,7 +163,7 @@ def main_menu():
             y_pos = HEIGHT - 40 + 4  # Start position for outer shadow
             
             for line in footer_lines:
-                # Outer layer (furtherst from text)
+                # Outer layer (furtherst from scripts.text)
                 footer_shadow_outer = FOOTER_FONT.render(line, True, BLACK)
                 footer_shadow_rect_outer = footer_shadow_outer.get_rect(center=(WIDTH//2 + 6, y_pos))
                 SCREEN.blit(footer_shadow_outer, footer_shadow_rect_outer)

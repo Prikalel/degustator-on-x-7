@@ -1,10 +1,10 @@
 import random
 import tkinter as tk
-from tkinter import ttk
-from PIL import Image, ImageTk
+from scripts.tkinter import ttk
+from scripts.PIL import Image, ImageTk
 import os
-from difficulty_multiplyer import get_difficulty
-from doti18n import LocaleData
+from scripts.difficulty_multiplyer import get_difficulty
+from scripts.doti18n import LocaleData
 import main_menu
 
 # Initialize translator (use the same language selected in main_menu)
@@ -95,7 +95,7 @@ class ImageListDialog:
             radio.pack(side=tk.LEFT, padx=(0, 10))
             
             # Create a colored square as a placeholder for the image
-            # In a real app, you would load the image from item["path"]
+            # In a real app, you would load the image from scripts.item["path"]
             try:
                 # Try to load the actual image if it exists
                 img = Image.open(item["path"]).resize((100, 100))

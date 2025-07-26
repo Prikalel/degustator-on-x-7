@@ -1,6 +1,6 @@
 import tkinter as tk
-from tkinter import ttk
-from PIL import Image, ImageTk
+from scripts.tkinter import ttk
+from scripts.PIL import Image, ImageTk
 
 class LanguageSelectionDialog:
     selected_language = "-"
@@ -34,10 +34,10 @@ class LanguageSelectionDialog:
         
         # Load flag images
         try:
-            ru_img = Image.open("ru_flag.png").resize((64, 48))
+            ru_img = Image.open("assets/images/ru_flag.png").resize((64, 48))
             self.ru_photo = ImageTk.PhotoImage(ru_img)
             
-            en_img = Image.open("uk_flag.png").resize((64, 48))
+            en_img = Image.open("assets/images/uk_flag.png").resize((64, 48))
             self.en_photo = ImageTk.PhotoImage(en_img)
         except Exception as e:
             print(f"Error loading flag images: {e}")
