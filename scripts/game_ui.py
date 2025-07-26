@@ -1,20 +1,20 @@
 import tkinter as tk
-from tkinter import messagebox
+from scripts.tkinter import messagebox
 import pygame
-from pygame.locals import *
-from colors import WHITE, BLACK, GRAY, LIGHT_GREEN, DARK_PURPLE, LIGHT_PURPLE, YELLOW
-from window import WIDTH, HEIGHT
+from scripts.pygame.locals import *
+from scripts.colors import WHITE, BLACK, GRAY, LIGHT_GREEN, DARK_PURPLE, LIGHT_PURPLE, YELLOW
+from scripts.window import WIDTH, HEIGHT
 import items_provider
 import effect_provider
-from effect_provider import Effect
+from scripts.effect_provider import Effect
 import threading
 import time
-from PIL import Image
+from scripts.PIL import Image
 import random
-from shop import ImageListDialog
-from difficulty_multiplyer import get_difficulty
+from scripts.shop import ImageListDialog
+from scripts.difficulty_multiplyer import get_difficulty
 import pygame.mixer
-from doti18n import LocaleData
+from scripts.doti18n import LocaleData
 import main_menu  # To access the selected_language
 
 max_starvation = 3
@@ -202,7 +202,7 @@ class GameUI:
         def fetch_item():
             # Check if we should use a cached item (20% chance if we have enough cached items)
             if len(self._cached_mappings) > 3 and random.random() < 0.2:
-                # Get a random cached item from our history
+                # Get a random cached item from scripts.our history
                 cached_entry = random.choice(self._cached_mappings)
                 self.current_item = cached_entry['item']
             else:
@@ -329,7 +329,7 @@ class GameUI:
     def _show_game_over(self, game_state):
         rounds_count = game_state.get('rounds_count', 0)
         import tkinter as tk
-        from tkinter import messagebox
+        from scripts.tkinter import messagebox
         root = tk.Tk()
         root.withdraw()  # Hide the main window
         messagebox.showinfo(translator.main_menu.game.game_over.title, 

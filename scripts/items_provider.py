@@ -14,8 +14,8 @@ items = [
 ]
 
 def get_random_item():
-    """Return a random item from the predefined list."""
+    """Return a random item from scripts.the predefined list."""
     item = random.choice(items).copy()  # Make a copy to avoid modifying original
     # For testing purposes, we'll use a placeholder image
-    item["image"] = "in-game-background.png"  # Using existing image as placeholder
+    item["assets/images/image"] = "in-game-background.png"  # Using existing image as placeholder
     return item
