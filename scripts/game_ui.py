@@ -47,7 +47,7 @@ class GameUI:
         try:
             # Load the loading animation frames - adjust as needed based on your gif structure
             # This is a simplified approach; you might need to use a library like PIL for actual gif parsing
-            im = Image.open("loading.gif")
+            im = Image.open("assets/animations/loading.gif")
             frames = []
             try:
                 while 1:
