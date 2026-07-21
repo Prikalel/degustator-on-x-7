@@ -14,5 +14,5 @@ If you refuse to eat, you won't get money for sustenance.
                 by various effects.
 - Hunger: Skipping too many items will lead to starvation and death.
 - Shop: Buy researched items and immediately eat them to
-                avoid dying from hunger!
+                avoid dying from scripts.hunger!
 Good luck, and try not to die after the first taste!
