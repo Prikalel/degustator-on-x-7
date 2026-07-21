@@ -113,7 +113,7 @@ FONT_PATH = None  # optional bundled .ttf for the regular UI font (Cyrillic-capa
 # the emoji code points, e.g. "NotoEmoji-Regular.ttf" — the *monochrome* Noto
 # Emoji, NOT "Noto Color Emoji" which freetype cannot colour-composite). When
 # None the renderer falls back to system emoji fonts (Segoe UI Emoji on Windows).
-FONT_EMOJI_PATH = None
+FONT_EMOJI_PATH = "assets/NotoEmoji-Regular.ttf"
 
 # Canonical gameplay icons (emoji glyphs) — used instead of locale-specific
 # letters/words so the UI needs no translation. Each has a drawn fallback in
