@@ -434,5 +434,24 @@ frameborder="1"
 
     </script>
 
+<script id="degustator-save-sync">
+(function(){
+  var KEY="degustator_x7_completed_v1", PATH="save/progress.json";
+  function getFS(){try{return (window.Module&&window.Module.FS)||window.FS||(window.pygame&&window.pygame.FS)||(window._module&&window._module.FS);}catch(e){return null;}}
+  function lsGet(){try{var v=localStorage.getItem(KEY);return (v==null)?null:v;}catch(e){return null;}}
+  function lsSet(s){try{localStorage.setItem(KEY,s);}catch(e){}}
+  function memRead(){var FS=getFS();if(!FS||!FS.readFile)return null;try{var d=FS.readFile(PATH,{encoding:"utf8"});return (typeof d==="string")?d:new TextDecoder().decode(d);}catch(e){return null;}}
+  function memWrite(s){var FS=getFS();if(!FS||!FS.writeFile)return false;try{try{FS.mkdir("save");}catch(e){}FS.writeFile(PATH,s);return true;}catch(e){return false;}}
+  var seeded=false;
+  function step(){
+    if(!seeded){var v=lsGet();if(v!=null&&memWrite(v)){seeded=true;}}
+    var m=memRead();
+    if(m!=null){if(lsGet()!==m){lsSet(m);}}
+    else{var v=lsGet();if(v!=null){memWrite(v);}}
+  }
+  if(document.readyState==="complete"||document.readyState==="interactive"){step();}
+  setInterval(step,500);
+})();
+</script>
 </body>
 </html>
