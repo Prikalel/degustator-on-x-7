@@ -5,3 +5,6 @@ img+*.png
 
 # Pygbag build output
 build/
+
+# Player progress (finished companies) — written at runtime by persistence.py
+save/

@@ -1,6 +1,10 @@
-"""levels_data.py — load ``levels.json`` into typed level objects.
+"""levels_data.py — typed loaders for levels and the COMPANIES that group them.
 
-EXACT schema read from ``levels.json`` (top level = JSON array of level objects):
+The active data model is **companies**: one ``companies/<n>.json`` file per
+campaign (see :class:`CompanyData` / :func:`load_companies` below). Each company
+contains a list of level objects with this schema:
+
+EXACT schema for a level object (the same one the legacy ``levels.json`` used):
 
     {
         "name_ru":           str,                # Russian display name
@@ -22,8 +26,9 @@ Every level's grid is a rectangle (all rows the same length in the data).
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import config
 
@@ -206,3 +211,130 @@ def get_level(index: int) -> LevelData:
 
 def num_levels() -> int:
     return len(get_levels())
+
+
+# ===========================================================================
+# COMPANIES
+# ===========================================================================
+# A "company" is a self-contained campaign: a named set of levels the player
+# picks from the company-select screen. Each company is ONE JSON file inside
+# ``companies/`` whose filename stem is an integer = the company number / order:
+#
+#     companies/1.json   -> company number 1
+#     companies/2.json   -> company number 2
+#     ...
+#
+# Each company file schema:
+#
+#     {
+#         "name_ru":  str,                # Russian company display name
+#         "name_en":  str,                # English company display name
+#         "levels":   [ <level object>, ... ]   # same schema as levels.json entries
+#     }
+@dataclass
+class CompanyData:
+    """A named campaign made of an ordered list of :class:`LevelData`."""
+
+    number: int                  # company number (from the filename stem)
+    name_ru: str
+    name_en: str
+    levels: List[LevelData] = field(default_factory=list)
+
+    @property
+    def name(self) -> str:
+        return self.name_en
+
+    def display_name(self, lang: str = "en") -> str:
+        return self.name_ru if lang == "ru" else self.name_en
+
+    @property
+    def num_levels(self) -> int:
+        return len(self.levels)
+
+    def to_dict(self) -> dict:
+        return {
+            "number": self.number,
+            "name_ru": self.name_ru,
+            "name_en": self.name_en,
+            "levels": [lvl.to_dict() for lvl in self.levels],
+        }
+
+
+def _company_number_from_name(filename: str) -> Optional[int]:
+    """``"3.json"`` -> ``3``; non-integer stems -> ``None`` (skipped)."""
+    stem = os.path.splitext(os.path.basename(filename))[0]
+    try:
+        return int(stem)
+    except ValueError:
+        return None
+
+
+def list_company_files(directory: str = config.COMPANIES_DIR) -> List[Tuple[int, str]]:
+    """Return ``[(number, path), ...]`` for every ``<int>.json`` in ``directory``,
+    sorted ascending by number. Returns ``[]`` if the directory is absent."""
+    if not os.path.isdir(directory):
+        return []
+    out: List[Tuple[int, str]] = []
+    for fname in os.listdir(directory):
+        if not fname.endswith(".json"):
+            continue
+        num = _company_number_from_name(fname)
+        if num is None:
+            continue
+        out.append((num, os.path.join(directory, fname)))
+    out.sort(key=lambda pair: pair[0])
+    return out
+
+
+def _parse_company(path: str, number: int) -> CompanyData:
+    with open(path, "r", encoding="utf-8") as fh:
+        raw = json.load(fh)
+    if not isinstance(raw, dict):
+        raise ValueError(f"company file {path!r} must be a JSON object")
+    for key in ("name_ru", "name_en", "levels"):
+        if key not in raw:
+            raise ValueError(f"company file {path!r} missing key {key!r}")
+    raw_levels = raw["levels"]
+    if not isinstance(raw_levels, list) or not raw_levels:
+        raise ValueError(f"company file {path!r} must have a non-empty 'levels' array")
+    levels = [_parse_level(lvl) for lvl in raw_levels]
+    return CompanyData(
+        number=number,
+        name_ru=str(raw["name_ru"]),
+        name_en=str(raw["name_en"]),
+        levels=levels,
+    )
+
+
+def load_companies(directory: str = config.COMPANIES_DIR) -> List[CompanyData]:
+    """Load every ``companies/<n>.json`` into a list sorted by company number."""
+    files = list_company_files(directory)
+    if not files:
+        raise FileNotFoundError(
+            f"no company files (<int>.json) found in {directory!r}"
+        )
+    return [_parse_company(path, num) for num, path in files]
+
+
+# Module-level cache (load once, reuse).
+_companies_cache: Optional[List[CompanyData]] = None
+
+
+def get_companies() -> List[CompanyData]:
+    """Return the cached list of companies, loading on first call."""
+    global _companies_cache
+    if _companies_cache is None:
+        _companies_cache = load_companies()
+    return _companies_cache
+
+
+def get_company(number: int) -> CompanyData:
+    """Return the company whose ``number`` matches, or raise ``KeyError``."""
+    for c in get_companies():
+        if c.number == number:
+            return c
+    raise KeyError(f"company number {number} not found")
+
+
+def num_companies() -> int:
+    return len(get_companies())

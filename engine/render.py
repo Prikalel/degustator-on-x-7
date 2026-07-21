@@ -92,6 +92,87 @@ class Fonts:
 
 
 # ---------------------------------------------------------------------------
+# Emoji icon rendering (pygame.freetype) with a robust missing-glyph fallback.
+# ---------------------------------------------------------------------------
+class Icons:
+    """Render emoji glyphs via freetype; cache surfaces; detect missing glyphs.
+
+    A real emoji glyph at font size ``S`` is roughly ``0.8..1.1 * S`` wide; a
+    missing-glyph "tofu" box (when the font has no emoji code points) is tiny
+    and uniform (~0.2..0.35 * S). We use that width ratio to decide whether the
+    glyph rendered, returning ``None`` when it didn't so callers draw a
+    primitive fallback (lightning bolt / coin / mouth / person / checkmark)
+    instead of an empty box.
+
+    Glyphs are monochrome (freetype cannot colour-composite CBDT/COLR emoji),
+    tinted by ``fgcolor``; placed on top of an item's ``color`` fill they stay
+    clearly readable. A bundled emoji font can be set via ``config.FONT_EMOJI_PATH``
+    (e.g. the monochrome "NotoEmoji-Regular.ttf"); otherwise system emoji fonts
+    are tried (Segoe UI Emoji on Windows).
+    """
+
+    _STACK = ("segoeuiemoji,segoeuisymbol,notocoloremoji,notoemoji,"
+              "seguisym,symbola,applesymbols,dejavusans,arial")
+
+    def __init__(self) -> None:
+        self._font = None
+        self._cache: dict = {}
+        self._enabled = bool(getattr(config, "USE_EMOJI", True))
+        if not self._enabled:
+            return
+        try:
+            from pygame import freetype
+            freetype.init()  # idempotent; safe if pygame.init() already ran
+            path = getattr(config, "FONT_EMOJI_PATH", None)
+            if path:
+                try:
+                    self._font = freetype.Font(path, 24)
+                except Exception:
+                    self._font = None
+            if self._font is None:
+                try:
+                    self._font = freetype.SysFont(self._STACK, 24)
+                except Exception:
+                    self._font = None
+        except Exception:
+            self._font = None
+
+    def available(self) -> bool:
+        return self._enabled and self._font is not None
+
+    def get(self, emoji: str, size: int, color) -> Optional[pygame.Surface]:
+        """Return a cached rendered glyph surface, or ``None`` if unavailable."""
+        if not self.available() or not emoji:
+            return None
+        size = max(8, int(size))
+        key = (emoji, size, tuple(color))
+        if key in self._cache:
+            return self._cache[key]
+        surf = self._render(emoji, size, color)
+        self._cache[key] = surf  # cache the None result too
+        return surf
+
+    def _render(self, emoji: str, size: int, color) -> Optional[pygame.Surface]:
+        from pygame import freetype
+        f = self._font
+        if f is None:
+            return None
+        try:
+            f.size = size
+            rect = f.get_rect(emoji)
+        except Exception:
+            return None
+        if rect.width < size * 0.45:   # tofu / missing glyph
+            return None
+        try:
+            out = f.render(emoji, fgcolor=tuple(int(c) for c in color))
+            surf = out[0] if isinstance(out, tuple) else out
+            return surf
+        except Exception:
+            return None
+
+
+# ---------------------------------------------------------------------------
 # Best-effort image loader (swallows errors; Pygbag bundles these as data).
 # ---------------------------------------------------------------------------
 def load_image(path: str) -> Optional[pygame.Surface]:
@@ -113,20 +194,19 @@ def load_image_alpha(path: str) -> Optional[pygame.Surface]:
 
 
 # ---------------------------------------------------------------------------
-# Per-item display colour (stable by id; falls back to neutral).
+# Per-item display colour now lives in items.json (Item.color) so newly added
+# items automatically get their own recognisable colour. This is the fallback
+# used only if an item somehow lacks a colour field.
 # ---------------------------------------------------------------------------
-ITEM_COLORS = {
-    1: (240, 226, 80),    # banana
-    2: (224, 70, 64),     # apple
-    3: (255, 158, 122),   # shrimp
-    4: (176, 116, 66),    # hamburger
-    5: (236, 198, 56),    # golden fish
-}
 ITEM_DEFAULT_COLOR = (180, 180, 200)
 
 
-def item_color(item_id: int) -> Tuple[int, int, int]:
-    return ITEM_COLORS.get(int(item_id), ITEM_DEFAULT_COLOR)
+def item_color(item) -> Tuple[int, int, int]:
+    """The fill colour for an item's cell / chip (reads ``item.color``)."""
+    col = getattr(item, "color", None)
+    if isinstance(col, tuple) and len(col) == 3:
+        return col
+    return ITEM_DEFAULT_COLOR
 
 
 # Classic dice pip layouts on a 3x3 grid (row, col) in 0..2.
@@ -149,8 +229,12 @@ TRANSLATIONS = {
     "en": {
         "title": "Degustator on X-7",
         "subtitle": "A taster's roguelike — clear every level in one sitting",
-        "play": "Start Run",
+        "play": "Play",
         "tutorial": "Tutorial",
+        "company_select_title": "CHOOSE A COMPANY",
+        "company_select_hint": "Pick a company (click or press 1-9) to start. A check mark means you already cleared it.",
+        "company_levels": "{n} levels",
+        "company_back": "Back",
         "tutorial_back": "ESC / click to go back",
         "lang_toggle": "Language: EN  (press L for RU)",
         "start_hint": "ENTER / click  Start Run",
@@ -211,8 +295,12 @@ TRANSLATIONS = {
     "ru": {
         "title": "Дегустатор на X-7",
         "subtitle": "Рогалик-дегустатор — пройди все уровни за один забег",
-        "play": "Начать забег",
+        "play": "Играть",
         "tutorial": "Обучение",
+        "company_select_title": "ВЫБЕРИТЕ КОМПАНИЮ",
+        "company_select_hint": "Выберите компанию (клик или 1-9), чтобы начать. Галочка — уже пройдено.",
+        "company_levels": "уровней: {n}",
+        "company_back": "Назад",
         "tutorial_back": "ESC / клик — назад",
         "lang_toggle": "Язык: RU  (L — английский)",
         "start_hint": "ENTER / клик  Начать забег",
@@ -294,6 +382,7 @@ class Renderer:
     def __init__(self, lang: str = "en") -> None:
         self.lang = lang
         self.fonts = Fonts()
+        self.icons = Icons()
         self.strings = TRANSLATIONS.get(lang, TRANSLATIONS["en"])
         self.bg_menu = load_image(config.BG_MAIN_MENU)
         self.bg_game = load_image(config.BG_IN_GAME)
@@ -337,6 +426,109 @@ class Renderer:
     def _text_left(self, surf, font, text, topleft, color):
         img = font.render(text, True, color)
         surf.blit(img, img.get_rect(topleft=topleft))
+
+    # ----------------------------------------------------------- icon helpers
+    def _draw_icon(self, screen, emoji, center, size, color, kind=None):
+        """Blit an emoji glyph centred on ``center``; on missing glyph, draw a
+        primitive fallback selected by ``kind`` (bolt/mouth/coin/person/check)."""
+        surf = self.icons.get(emoji, size, color)
+        if surf is not None:
+            screen.blit(surf, surf.get_rect(center=center))
+            return True
+        if kind == "bolt":
+            self._fb_bolt(screen, center, size, color)
+        elif kind == "mouth":
+            self._fb_mouth(screen, center, size, color)
+        elif kind == "coin":
+            self._fb_coin(screen, center, size, color)
+        elif kind == "person":
+            self._fb_person(screen, center, size, color)
+        elif kind == "check":
+            self._fb_check(screen, center, size, color)
+        return False
+
+    def _draw_item_glyph(self, screen, item, rect, color) -> None:
+        """Draw an item's emoji centred in ``rect``; fall back to its initial."""
+        size = int(min(rect.width, rect.height) * 0.78)
+        cx, cy = rect.center
+        surf = self.icons.get(getattr(item, "icon", ""), size, (40, 30, 20))
+        if surf is not None:
+            screen.blit(surf, surf.get_rect(center=(cx, cy)))
+            return
+        name = item.display_name(self.lang) if hasattr(item, "display_name") else ""
+        letter = (name[:1] or "?").upper()
+        self._text(screen, self.fonts.tiny, letter, rect.center, COLORS["BLACK"])
+
+    def _stat_chips(self, screen, x, y, power, hunger, coins,
+                    icon_color=(40, 30, 20), text_color=None, icon_size=13) -> None:
+        """Draw a compact ⚡power 😋hunger 💰coins stat run, left-aligned at (x,y)
+        where ``y`` is the vertical centre. Used in inventory/shop rows."""
+        if text_color is None:
+            text_color = COLORS["BLACK"]
+        cur = x
+        for emoji, kind, val in [(config.ICON_POWER, "bolt", f"{int(power):+d}"),
+                                 (config.ICON_HUNGER, "mouth", f"{int(hunger):+d}"),
+                                 (config.ICON_COINS, "coin", str(int(coins)))]:
+            surf = self.icons.get(emoji, icon_size, icon_color)
+            if surf is not None:
+                screen.blit(surf, surf.get_rect(midleft=(cur, y)))
+                cur += surf.get_width() + 2
+            else:
+                self._draw_icon(screen, emoji, (cur + icon_size // 2, y),
+                                icon_size, icon_color, kind)
+                cur += icon_size + 2
+            img = self.fonts.tiny.render(val, True, text_color)
+            screen.blit(img, img.get_rect(midleft=(cur, y)))
+            cur += img.get_width() + 4
+
+    # --- drawn fallback icons (used only when no emoji font/glyph is present) -
+    def _fb_bolt(self, screen, center, size, color) -> None:
+        cx, cy = center
+        s = size
+        pts = [(cx - 0.15 * s, cy - 0.55 * s), (cx + 0.30 * s, cy - 0.05 * s),
+               (cx + 0.05 * s, cy - 0.05 * s), (cx + 0.15 * s, cy + 0.55 * s),
+               (cx - 0.30 * s, cy + 0.05 * s), (cx - 0.05 * s, cy + 0.05 * s)]
+        pygame.draw.polygon(screen, color, pts)
+
+    def _fb_coin(self, screen, center, size, color) -> None:
+        r = int(size * 0.5)
+        pygame.draw.circle(screen, color, center, r)
+        dark = tuple(max(0, int(c * 0.6)) for c in color)
+        pygame.draw.circle(screen, dark, center, r, max(2, r // 4))
+        pygame.draw.circle(screen, dark, center, max(2, r // 3))
+
+    def _fb_mouth(self, screen, center, size, color) -> None:
+        cx, cy = center
+        s = size
+        mouth = pygame.Rect(int(cx - s * 0.45), int(cy - s * 0.22),
+                            int(s * 0.9), int(s * 0.4))
+        pygame.draw.ellipse(screen, color, mouth)
+        tongue = pygame.Rect(int(cx - s * 0.12), int(cy + s * 0.02),
+                             int(s * 0.32), int(s * 0.3))
+        pygame.draw.ellipse(screen, (220, 70, 90), tongue)
+
+    def _fb_person(self, screen, center, size, color) -> None:
+        cx, cy = center
+        s = size
+        # head
+        pygame.draw.circle(screen, color, (int(cx), int(cy - s * 0.18)),
+                           max(3, int(s * 0.26)))
+        # shoulders
+        body = pygame.Rect(int(cx - s * 0.42), int(cy + s * 0.12),
+                           int(s * 0.84), int(s * 0.42))
+        pygame.draw.rect(screen, color, body, border_radius=max(3, int(s * 0.3)))
+
+    def _fb_check(self, screen, center, size, color) -> None:
+        cx, cy = center
+        r = int(size * 0.5)
+        pygame.draw.circle(screen, (40, 170, 70), center, r)
+        pygame.draw.circle(screen, COLORS["BLACK"], center, r, 2)
+        # checkmark as two thick segments
+        p1 = (cx - r * 0.45, cy + r * 0.05)
+        p2 = (cx - r * 0.10, cy + r * 0.40)
+        p3 = (cx + r * 0.50, cy - r * 0.35)
+        pygame.draw.line(screen, COLORS["WHITE"], p1, p2, max(2, r // 4))
+        pygame.draw.line(screen, COLORS["WHITE"], p2, p3, max(2, r // 4))
 
     # ----------------------------------------------------------- board layout
     def board_layout(self, level) -> Tuple[int, int, int]:
@@ -409,6 +601,65 @@ class Renderer:
             ("lang", pygame.Rect(cx - 70, 432, 140, 40)),
         ]
 
+    def company_select_rects(self, game):
+        """Return ``(rows, back_rect, row_h)`` where rows=[(company, rect)],
+        sorted by company number. Used for drawing AND click/keyboard hit-tests."""
+        companies = list(game.companies)
+        list_w = 560
+        row_h = 60
+        gap = 12
+        x0 = (config.WIDTH - list_w) // 2
+        y0 = 150
+        rows = []
+        for i, c in enumerate(companies):
+            ry = y0 + i * (row_h + gap)
+            rows.append((c, pygame.Rect(x0, ry, list_w, row_h)))
+        back = pygame.Rect(20, config.HEIGHT - 56, 120, 42)
+        return rows, back, row_h
+
+    # =====================================================================
+    # COMPANY SELECT
+    # =====================================================================
+    def draw_company_select(self, screen, game, anim) -> None:
+        self._blit_bg(screen, self.bg_menu)
+        self._dim(screen, 120)
+        self._text(screen, self.fonts.title, self._t("company_select_title"),
+                   (config.WIDTH // 2, 70), COLORS["YELLOW"])
+        # wrapped hint under the title
+        hint = self._t("company_select_hint")
+        hy = 108
+        for line in self._wrap(self.fonts.small, hint, config.WIDTH - 120):
+            self._text(screen, self.fonts.small, line,
+                       (config.WIDTH // 2, hy), COLORS["GRAY"])
+            hy += 18
+
+        rows, back, row_h = self.company_select_rects(game)
+        for c, rect in rows:
+            done = game.is_company_completed(c.number)
+            base = (38, 66, 56) if done else (44, 46, 64)
+            pygame.draw.rect(screen, base, rect, border_radius=10)
+            pygame.draw.rect(screen, COLORS["BLACK"], rect, 2, border_radius=10)
+            # number badge
+            self._text(screen, self.fonts.big, str(c.number),
+                       (rect.left + 38, rect.centery), COLORS["YELLOW"])
+            # name + level count
+            self._text_left(screen, self.fonts.med, c.display_name(self.lang),
+                            (rect.left + 78, rect.top + 10), COLORS["WHITE"])
+            self._text_left(screen, self.fonts.small,
+                            self._t("company_levels", n=c.num_levels),
+                            (rect.left + 78, rect.top + 34), COLORS["GRAY"])
+            # completed check (✅ emoji, drawn checkmark fallback)
+            if done:
+                self._draw_icon(screen, config.ICON_CHECK,
+                                (rect.right - 30, rect.centery), 30,
+                                (40, 170, 70), "check")
+
+        # back button
+        pygame.draw.rect(screen, COLORS["DARK_GRAY"], back, border_radius=8)
+        pygame.draw.rect(screen, COLORS["BLACK"], back, 2, border_radius=8)
+        self._text(screen, self.fonts.med, self._t("company_back"),
+                   back.center, COLORS["WHITE"])
+
     def shop_rects(self, game, scroll: int):
         """Return ``(rows, continue_rect)`` where rows=[(i, offer, row_rect, buy_rect)]."""
         offers = game.shop_offers()
@@ -442,6 +693,10 @@ class Renderer:
 
         if game.state == State.MAIN_MENU:
             self.draw_menu(screen, anim)
+            return
+
+        if game.state == State.COMPANY_SELECT:
+            self.draw_company_select(screen, game, anim)
             return
 
         # In-game backdrop: HUD + board + inventory + action bar.
@@ -524,15 +779,18 @@ class Renderer:
         self._panel(screen, rect, color=(24, 26, 36), border=(0, 0, 0))
         bar_max = 12  # visual reference width scale
 
-        # POWER
-        self._stat(screen, 16, self._t("hud_power"), p.power, bar_max,
+        # POWER  (⚡ icon instead of the word "POWER"/"СИЛА")
+        self._stat(screen, 16, config.ICON_POWER, "bolt", p.power, bar_max,
                    COLORS["LIGHT_GREEN"], COLORS["RED"], low=2)
-        # HUNGER
-        self._stat(screen, 270, self._t("hud_hunger"), p.hunger, bar_max,
+        # HUNGER (😋 icon instead of "HUNGER"/"ГОЛОД")
+        self._stat(screen, 270, config.ICON_HUNGER, "mouth", p.hunger, bar_max,
                    COLORS["ORANGE"], COLORS["RED"], low=2)
-        # COINS
-        self._text(screen, self.fonts.med, f"{self._t('hud_coins')}: {p.coins}",
-                   (520, config.HUD_HEIGHT // 2), COLORS["YELLOW"])
+        # COINS  (💰 icon instead of "COINS"/"МОНЕТЫ")
+        cx = 520
+        self._draw_icon(screen, config.ICON_COINS, (cx, config.HUD_HEIGHT // 2 - 2),
+                        22, COLORS["YELLOW"], "coin")
+        self._text(screen, self.fonts.med, str(p.coins),
+                   (cx + 32, config.HUD_HEIGHT // 2), COLORS["YELLOW"])
         # LEVEL (right-aligned)
         lvl_txt = self._t("hud_level", n=game.level_index + 1, t=game.num_levels)
         img = self.fonts.med.render(lvl_txt, True, COLORS["WHITE"])
@@ -554,9 +812,10 @@ class Renderer:
             img = self.fonts.med.render(msg, True, col)
             screen.blit(img, img.get_rect(midtop=(config.WIDTH // 2, 3)))
 
-    def _stat(self, screen, x, label, value, bar_max, ok_color, bad_color, low=2) -> None:
+    def _stat(self, screen, x, icon, kind, value, bar_max, ok_color, bad_color, low=2) -> None:
         cy = config.HUD_HEIGHT // 2
-        self._text(screen, self.fonts.small, label, (x + 40, cy - 2), COLORS["WHITE"])
+        # stat icon (emoji via freetype, drawn bolt/mouth fallback) in ok_color
+        self._draw_icon(screen, icon, (x + 18, cy - 2), 22, ok_color, kind)
         # numeric value
         col = bad_color if value < 0 else (COLORS["ORANGE"] if value <= low else COLORS["WHITE"])
         self._text(screen, self.fonts.med, str(value), (x + 120, cy), col)
@@ -644,13 +903,12 @@ class Renderer:
         item = game.items_table.get(int(item_id))
         if item is None:
             return
-        col = item_color(item_id)
+        col = item_color(item)
         chip = pygame.Rect(rect.left + 4, rect.top + 4, rect.width - 8, rect.height - 8)
         pygame.draw.rect(screen, col, chip, border_radius=5)
         pygame.draw.rect(screen, COLORS["BLACK"], chip, 1, border_radius=5)
-        name = item.display_name(self.lang)
-        short = name[:5]
-        self._text(screen, self.fonts.tiny, short, chip.center, COLORS["BLACK"])
+        # item emoji (🍌 🍎 …) on its coloured chip; falls back to the initial
+        self._draw_item_glyph(screen, item, chip, col)
 
     def _draw_flow_arrow(self, screen, rect, d, cell) -> None:
         # small chevron at the trailing edge of the cell showing row flow
@@ -698,7 +956,9 @@ class Renderer:
         screen.blit(sh, sh.get_rect(center=(pos[0], pos[1] + 3)))
         pygame.draw.circle(screen, COLORS["PLAYER_COLOR"], pos, radius)
         pygame.draw.circle(screen, COLORS["WHITE"], pos, radius, 3)
-        self._text(screen, self.fonts.med, "P", pos, COLORS["WHITE"])
+        # player token icon (👤 emoji, drawn person fallback) instead of "P"
+        self._draw_icon(screen, config.ICON_PLAYER, pos, int(radius * 1.5),
+                        COLORS["WHITE"], "person")
 
     # ----------------------------------------------------- dice primitive
     def _draw_die(self, screen, topleft, size, face, color) -> None:
@@ -726,14 +986,18 @@ class Renderer:
         else:
             for i, rect in self.inventory_row_rects(game):
                 item = inv[i]
-                pygame.draw.rect(screen, item_color(item.id), rect, border_radius=5)
+                pygame.draw.rect(screen, item_color(item), rect, border_radius=5)
                 pygame.draw.rect(screen, COLORS["BLACK"], rect, 1, border_radius=5)
-                name = item.display_name(self.lang)[:7]
-                self._text_left(screen, self.fonts.tiny, f"{i + 1}. {name}",
-                                (rect.left + 5, rect.top + 4), COLORS["BLACK"])
-                stats = f"P{item.power:+d} H{item.hunger:+d} ${item.coins}"
-                self._text_left(screen, self.fonts.tiny, stats,
-                                (rect.left + 5, rect.top + 19), COLORS["BLACK"])
+                # slot index + item emoji (identity) instead of the item name
+                self._text_left(screen, self.fonts.tiny, f"{i + 1}.",
+                                (rect.left + 5, rect.top + 3), COLORS["BLACK"])
+                glyph_rect = pygame.Rect(rect.left + 22, rect.top + 2,
+                                         rect.height - 4, rect.height - 4)
+                self._draw_item_glyph(screen, item, glyph_rect, item.color)
+                # icon stat run ⚡/😋/💰 instead of "P.. H.. $.."
+                self._stat_chips(screen, rect.left + rect.height + 8, rect.centery,
+                                 item.power, item.hunger, item.coins,
+                                 icon_color=(40, 30, 20))
         # legend at the bottom of the inventory panel (split on " | " into lines)
         legend_parts = self._t("legend").split(" | ")
         for k, part in enumerate(legend_parts):
@@ -851,13 +1115,14 @@ class Renderer:
             pygame.draw.rect(screen, (44, 46, 64), row_rect, border_radius=8)
             pygame.draw.rect(screen, COLORS["DARK_GRAY"], row_rect, 1, border_radius=8)
             if item is not None:
-                chip = pygame.Rect(row_rect.left + 8, row_rect.top + 8, 26, row_rect.height - 16)
-                pygame.draw.rect(screen, item_color(item.id), chip, border_radius=5)
-                self._text(screen, self.fonts.med, item.display_name(self.lang),
-                           (row_rect.left + 46, row_rect.top + 16), COLORS["WHITE"])
-                self._text(screen, self.fonts.small,
-                           f"P{item.power:+d} H{item.hunger:+d} sell {item.coins}",
-                           (row_rect.left + 46, row_rect.top + 40), COLORS["GRAY"])
+                chip = pygame.Rect(row_rect.left + 8, row_rect.top + 8, 42, row_rect.height - 16)
+                pygame.draw.rect(screen, item_color(item), chip, border_radius=6)
+                # item emoji (identity) instead of the name
+                self._draw_item_glyph(screen, item, chip, item.color)
+                # icon stat run ⚡/😋/💰 instead of "P.. H.. sell .."
+                self._stat_chips(screen, row_rect.left + 60, row_rect.centery,
+                                 item.power, item.hunger, item.coins,
+                                 icon_color=(235, 235, 240), text_color=COLORS["WHITE"])
             # buy button
             bcol = COLORS["LIGHT_GREEN"] if affordable else (80, 80, 92)
             pygame.draw.rect(screen, bcol, buy_rect, border_radius=6)

@@ -35,8 +35,9 @@ import random
 from typing import Callable, Dict, List, Optional, Sequence
 
 import movement
+import persistence
 from items import Item, get_items
-from levels_data import LevelData, get_levels
+from levels_data import CompanyData, LevelData, get_companies
 from player import Player
 
 
@@ -44,6 +45,7 @@ class State:
     """All reachable states (string constants for readability in logs/tests)."""
 
     MAIN_MENU = "MAIN_MENU"
+    COMPANY_SELECT = "COMPANY_SELECT"  # pick which company (campaign) to play
     LEVEL_INTRO = "LEVEL_INTRO"
     EAT_PHASE = "EAT_PHASE"          # can eat inventory items; done_eating() to proceed
     MOVE_SELECT = "MOVE_SELECT"      # pick a movement option
@@ -63,11 +65,26 @@ class Game:
 
     def __init__(
         self,
+        companies: Optional[Sequence[CompanyData]] = None,
         levels: Optional[Sequence[LevelData]] = None,
         items_table: Optional[Dict[int, Item]] = None,
         rng: Optional[random.Random] = None,
     ) -> None:
-        self.levels: List[LevelData] = list(levels) if levels is not None else get_levels()
+        # The catalogue of available campaigns (companies/<n>.json).
+        if companies is not None:
+            self.companies: List[CompanyData] = list(companies)
+        else:
+            self.companies = get_companies()
+
+        # ``levels`` is the ACTIVE company's level list. It is empty until a
+        # company is started (start_company). Tests may inject a bare level list
+        # (no company wrapper) by passing ``levels=`` -- in that case a synthetic
+        # company #1 wraps them so the rest of the machinery works unchanged.
+        if levels is not None and companies is None:
+            self.companies = [CompanyData(number=1, name_en="Custom",
+                                          name_ru="Свои", levels=list(levels))]
+        self.levels: List[LevelData] = []
+
         self.items_table: Dict[int, Item] = dict(items_table) if items_table is not None else get_items()
         self.rng = rng or random
 
@@ -76,6 +93,10 @@ class Game:
         self.level_index: int = -1
         self.player: Player = Player()
         self._carry: List[Item] = []        # items bought in shop -> next level's inventory
+
+        # Which company is being played, and which the player has already cleared.
+        self.current_company_number: Optional[int] = None
+        self.completed_companies: set = set(persistence.load_completed())
 
         # Current-level runtime (set by start_level).
         self.current_level: Optional[LevelData] = None
@@ -110,14 +131,63 @@ class Game:
     def is_over(self) -> bool:
         return self.state in (State.GAME_OVER, State.VICTORY)
 
+    # ------------------------------------------------------------------ companies
+    @property
+    def num_companies(self) -> int:
+        return len(self.companies)
+
+    def company_index_of(self, number: int) -> int:
+        """0-based index into ``self.companies`` for company ``number``."""
+        for i, c in enumerate(self.companies):
+            if c.number == number:
+                return i
+        raise KeyError(f"company number {number} not found")
+
+    @property
+    def current_company(self) -> Optional[CompanyData]:
+        if self.current_company_number is None:
+            return None
+        try:
+            return self.companies[self.company_index_of(self.current_company_number)]
+        except KeyError:
+            return None
+
+    def open_company_select(self) -> None:
+        """From the main menu: show the company (campaign) selection screen."""
+        self.state = State.COMPANY_SELECT
+        self.current_company_number = None
+        # Re-read the store now so the ✅ badges reflect any progress that was
+        # persisted since startup (e.g. seeded into the web FS after page load).
+        self.completed_companies = set(persistence.load_completed())
+
+    def is_company_completed(self, number: int) -> bool:
+        return number in self.completed_companies
+
     # ------------------------------------------------------------------ run
-    def start_run(self) -> None:
-        """Begin a fresh run at level 1: coins reset to 0, carry list cleared."""
+    def start_company(self, number: int) -> None:
+        """Begin a fresh run of company ``number`` at its first level.
+
+        Coins reset to 0, carry list cleared, current company recorded.
+        """
+        idx = self.company_index_of(number)
+        company = self.companies[idx]
+        self.current_company_number = number
+        self.levels = list(company.levels)
         self.player = Player()            # power/hunger set by start_level; coins 0
         self._carry = []
         self.trace = []
-        self._log("RUN START")
+        self._log(f"COMPANY {number} ('{company.name_en}') START - {len(self.levels)} levels")
         self.start_level(0)
+
+    def start_run(self) -> None:
+        """Backward-compatible entry: begin the first available company.
+
+        The interactive UI now goes through ``open_company_select`` ->
+        ``start_company``; this remains for headless tests / scripts.
+        """
+        if not self.companies:
+            raise RuntimeError("no companies available to start")
+        self.start_company(self.companies[0].number)
 
     # -------------------------------------------------------------- level mgmt
     def start_level(self, index: int) -> LevelData:
@@ -349,6 +419,11 @@ class Game:
             self.state = State.VICTORY
             self._log(f"VICTORY: finished all {self.num_levels} levels, "
                       f"final coins={self.player.coins}")
+            # Record the cleared company so the select screen can badge it and
+            # so progress survives a page reload (persistence.mark_completed).
+            if self.current_company_number is not None:
+                self.completed_companies.add(self.current_company_number)
+                persistence.mark_completed(self.current_company_number)
         else:
             self.start_level(self.level_index + 1)
 

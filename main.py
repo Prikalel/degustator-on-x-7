@@ -203,13 +203,23 @@ class App:
 
         if st == State.MAIN_MENU:
             if key in (pygame.K_RETURN, pygame.K_KP_ENTER, pygame.K_SPACE):
-                self._start_run()
+                self._open_company_select()
             elif key == pygame.K_t:
                 self._open_tutorial()
             elif key == pygame.K_l:
                 self._toggle_lang()
             elif key == pygame.K_ESCAPE:
                 self.running = False
+            return
+
+        if st == State.COMPANY_SELECT:
+            if key == pygame.K_ESCAPE:
+                self._to_menu()
+            else:
+                idx = self._digit(key)
+                if idx is not None:
+                    # digit 1 -> company #1, digit 2 -> company #2, ...
+                    self._pick_company_by_number(idx + 1)
             return
 
         if st in (State.GAME_OVER, State.VICTORY):
@@ -278,11 +288,22 @@ class App:
             for action, rect in self.renderer.menu_rects():
                 if rect.collidepoint(pos):
                     if action == "play":
-                        self._start_run()
+                        self._open_company_select()
                     elif action == "tutorial":
                         self._open_tutorial()
                     elif action == "lang":
                         self._toggle_lang()
+                    return
+            return
+
+        if st == State.COMPANY_SELECT:
+            rows, back, _ = self.renderer.company_select_rects(g)
+            if back.collidepoint(pos):
+                self._to_menu()
+                return
+            for c, rect in rows:
+                if rect.collidepoint(pos):
+                    self._start_company(c.number)
                     return
             return
 
@@ -327,9 +348,23 @@ class App:
     # ===================================================================
     # High-level actions (drive the Game controller)
     # ===================================================================
-    def _start_run(self) -> None:
-        self.game.start_run()
-        self._last_level = -1          # force the intro to (re)trigger
+    def _open_company_select(self) -> None:
+        # "Play" -> open the campaign selection screen.
+        self.game.open_company_select()
+        self.anim.intro = False
+        self.anim.tutorial = False
+        self.ui_phase = "idle"
+
+    def _pick_company_by_number(self, number: int) -> None:
+        for c in self.game.companies:
+            if c.number == number:
+                self._start_company(c.number)
+                return
+
+    def _start_company(self, number: int) -> None:
+        # Begin the chosen campaign immediately at its first level.
+        self.game.start_company(number)
+        self._last_level = -1          # force the level intro to (re)trigger
         self.anim.shop_scroll = 0
         self.anim.intro = False
         self.ui_phase = "idle"

@@ -4,6 +4,7 @@
         "name_ru": "банан",
         "name_en": "banana",
         "icon": "🍌",
+        "color": [240, 226, 80],
         "power": 1,
         "hunger": 1,
         "coins": 1
@@ -13,6 +14,7 @@
         "name_ru": "яблоко",
         "name_en": "apple",
         "icon": "🍎",
+        "color": [224, 70, 64],
         "power": 2,
         "hunger": 1,
         "coins": 2
@@ -22,6 +24,7 @@
         "name_ru": "креветка",
         "name_en": "shrimp",
         "icon": "🍤",
+        "color": [255, 158, 122],
         "power": 2,
         "hunger": 0,
         "coins": 2
@@ -31,6 +34,7 @@
         "name_ru": "бургер",
         "name_en": "hamburger",
         "icon": "🍔",
+        "color": [176, 116, 66],
         "power": 2,
         "hunger": 0,
         "coins": 2
@@ -40,6 +44,7 @@
         "name_ru": "золотая рыбка",
         "name_en": "golden fish",
         "icon": "🐟",
+        "color": [236, 198, 56],
         "power": 0,
         "hunger": 0,
         "coins": 4

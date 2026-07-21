@@ -1,0 +1,90 @@
+{
+    "name_ru": "Обучение",
+    "name_en": "Tutorial",
+    "levels": [
+        {
+            "name_ru": "Перемещения",
+            "name_en": "Movement",
+            "rows": [
+                ["0", "0", "0"]
+            ],
+            "moves": [
+                {
+                    "max_value": 1,
+                    "power": 1
+                }
+            ],
+            "start_parameters": {
+                "power": 3,
+                "hunger": 3
+            },
+            "shop_after_level": [
+            ]
+        },
+        {
+            "name_ru": "Подбор предметов",
+            "name_en": "Inventory",
+            "rows": [
+                ["0", "1", "1", "1", "1", "0"]
+            ],
+            "moves": [
+                {
+                    "max_value": 2,
+                    "power": 1
+                }
+            ],
+            "start_parameters": {
+                "power": 1,
+                "hunger": 1
+            },
+            "shop_after_level": [
+            ]
+        },
+        {
+            "name_ru": "Продажа предметов",
+            "name_en": "Selling items",
+            "rows": [
+                ["0", "1", "1", "1", "1", "0"]
+            ],
+            "moves": [
+                {
+                    "max_value": 1,
+                    "power": 0
+                }
+            ],
+            "start_parameters": {
+                "power": 20,
+                "hunger": 20
+            },
+            "shop_after_level": [
+                {
+                    "item_id": 4,
+                    "shop_cost": 1
+                }
+            ]
+        },
+        {
+            "name_ru": "Выбор направления",
+            "name_en": "Select direction",
+            "rows": [
+                ["0", "0", "0", "0", "0", "0", "0", "0"],
+                ["-", "-", "0", "-", "-", "-", "-", "0"],
+                ["-", "-", "0", "-", "-", "-", "-", "0"],
+                ["-", "-", "0", "-", "-", "-", "-", "0"],
+                ["-", "-", "0", "0", "0", "0", "0", "0"]
+            ],
+            "moves": [
+                {
+                    "max_value": 3,
+                    "power": 1
+                }
+            ],
+            "start_parameters": {
+                "power": 10,
+                "hunger": 20
+            },
+            "shop_after_level": [
+            ]
+        }
+    ]
+}

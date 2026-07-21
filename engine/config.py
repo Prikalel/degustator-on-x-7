@@ -76,7 +76,15 @@ IMAGES_DIR = "assets/images"
 SOUNDS_DIR = "assets/sounds"
 
 ITEMS_PATH = "items.json"
+# Levels are now grouped into COMPANIES: one JSON file per company in
+# ``companies/<n>.json`` (the numeric filename stem = company number / order).
+# LEVELS_PATH is kept only for backward compatibility with old single-file data.
 LEVELS_PATH = "levels.json"
+COMPANIES_DIR = "companies"
+
+# Persistence of finished companies (web: localStorage/IDBFS; desktop: this file).
+SAVE_DIR = "save"
+SAVE_PATH = "save/progress.json"
 
 # Asset file names (joined with the dirs above by the renderer later).
 BG_IN_GAME = "assets/images/in-game-background.png"
@@ -89,9 +97,26 @@ SFX_NOM = "assets/sounds/nom-nom-nom.ogg"
 # ---------------------------------------------------------------------------
 # Fonts / emoji policy
 # ---------------------------------------------------------------------------
-# Emoji rendering is unreliable in pygame (and essentially never works inside a
-# Pygbag browser canvas). Gameplay-critical text uses plain text names from
-# items.json. ``USE_EMOJI`` is a hint the renderer may honour; default off.
-USE_EMOJI = False
+# Emoji glyphs are rendered via pygame.freetype from an emoji-capable font
+# (Segoe UI Emoji on Windows, or the bundled ``FONT_EMOJI_PATH`` font). The
+# renderer validates each glyph (a missing glyph renders as a tiny tofu box and
+# is detected by its width) and falls back to a drawn primitive so the UI never
+# looks broken. ``USE_EMOJI`` simply toggles whether the emoji path is tried at
+# all; turn it off to force the drawn fallbacks everywhere.
+USE_EMOJI = True
 DEFAULT_FONT_SIZE = 20
-FONT_PATH = None  # set to a bundled .ttf relative path later if one is added
+FONT_PATH = None  # optional bundled .ttf for the regular UI font (Cyrillic-capable)
+# Optional bundled emoji font (a regular outline OpenType/TTF font that contains
+# the emoji code points, e.g. "NotoEmoji-Regular.ttf" — the *monochrome* Noto
+# Emoji, NOT "Noto Color Emoji" which freetype cannot colour-composite). When
+# None the renderer falls back to system emoji fonts (Segoe UI Emoji on Windows).
+FONT_EMOJI_PATH = None
+
+# Canonical gameplay icons (emoji glyphs) — used instead of locale-specific
+# letters/words so the UI needs no translation. Each has a drawn fallback in
+# render.py for environments without an emoji font.
+ICON_PLAYER = "\U0001F464"   # 👤 player token   (was the letter "P")
+ICON_HUNGER = "\U0001F60B"   # 😋 hunger         (was "H" / "Г")
+ICON_COINS  = "\U0001F4B0"   # 💰 money          (was "деньги"/"COINS")
+ICON_POWER  = "\u26A1"       # ⚡ power          (was "СИЛА"/"POWER")
+ICON_CHECK  = "\u2705"       # ✅ completed-company badge
