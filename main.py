@@ -43,13 +43,13 @@ class App:
 
     def __init__(self) -> None:
         pygame.init()
-        try:
-            self.screen = pygame.display.set_mode(
-                (config.WIDTH, config.HEIGHT), pygame.SCALED, vsync=1
-            )
-        except Exception:
-            # Older pygame / headless / odd drivers: fall back to plain mode.
-            self.screen = pygame.display.set_mode((config.WIDTH, config.HEIGHT))
+        # NOTE: do NOT use pygame.SCALED. Inside the Pygbag browser canvas,
+        # SCALED delivers MOUSEBUTTONDOWN positions in the physical/canvas
+        # space instead of the logical 800x600 surface, so every click
+        # hit-test (rect.collidepoint) silently fails everywhere — while
+        # keyboard input (which carries no position) still works. Plain mode
+        # keeps mouse coordinates consistent on both desktop and web.
+        self.screen = pygame.display.set_mode((config.WIDTH, config.HEIGHT))
         pygame.display.set_caption("Degustator on X-7")
         self.clock = pygame.time.Clock()
 
@@ -117,9 +117,27 @@ class App:
         if ev.type == pygame.KEYDOWN:
             self._on_key(ev.key)
         elif ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
-            self._on_click(ev.pos)
+            self._on_click(self._to_logical(ev.pos))
         elif ev.type == pygame.MOUSEWHEEL:
             self._on_wheel(ev.y)
+
+    def _to_logical(self, pos) -> tuple:
+        """Map a mouse position into the logical (config.WIDTH x config.HEIGHT)
+        surface space used by every renderer hit-test rect.
+
+        In plain (non-SCALED) mode ``pygame.display.get_window_size()`` and the
+        event position share the same coordinate system, so this is an identity
+        when the window equals the logical size and otherwise rescales by the
+        real ratio — robust for native desktop and the Pygbag browser canvas.
+        """
+        try:
+            ww, wh = pygame.display.get_window_size()
+        except Exception:
+            return pos
+        if not ww or not wh or (ww == config.WIDTH and wh == config.HEIGHT):
+            return (int(pos[0]), int(pos[1]))
+        return (int(round(pos[0] * config.WIDTH / ww)),
+                int(round(pos[1] * config.HEIGHT / wh)))
 
     def _on_wheel(self, dy: int) -> None:
         if self.anim.tutorial:

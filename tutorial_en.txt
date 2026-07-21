@@ -1,18 +1,66 @@
-## Tutorial
+HOW TO PLAY — DEGUSTATOR ON X-7
 
-On the new planet X-7, there are many items and things to check for edibility.
+GOAL
+Clear every level in a single run. Each level is a board you must cross from
+START (top-left) to EXIT (bottom-right). The next level unlocks only after you
+finish the previous one. Clear the LAST level to win. There are no saves: if you
+fail, the whole run restarts from Level 1.
 
-Your mission is simple - to determine what is edible and what is not,
-                by eating strange alien substances.
-If you refuse to eat, you won't get money for sustenance.
+THE BOARD
+The path is a serpentine (snake-like) track. Arrows on each row show its flow:
+   >  right       <  left       v  down
+You can NEVER move back toward the start (no moving up). On right-flowing rows
+you go right or drop down; on left-flowing rows you go left or drop down. A cell
+where the path splits into two forward options is a BRANCH — you will get to pick.
 
-## Core Mechanics
+Cells:
+   - a gap / dash  = no cell here, no passage
+   - 0 / empty     = a cell you may stand on
+   - a number      = an item lying on that cell (its id)
 
-- Round: In each round, you decide whether to consume the offered item.
-- Choice Result: If you decide to eat, you get money for it.
-- Effect: Eating items is not always safe, so you will be affected
-                by various effects.
-- Hunger: Skipping too many items will lead to starvation and death.
-- Shop: Buy researched items and immediately eat them to
-                avoid dying from scripts.hunger!
-Good luck, and try not to die after the first taste!
+YOUR STATS  (top bar)
+   POWER   stamina spent to move. If it drops below 0 -> you collapse = GAME OVER.
+   HUNGER  every move costs exactly 1 hunger. Below 0 -> starvation = GAME OVER.
+   COINS   money. The ONLY stat carried over from one level to the next.
+POWER and HUNGER RESET to the level's starting values at the start of every level.
+
+A TURN
+1. EAT PHASE (optional): before AND after a move you may eat items from your
+   inventory to restore POWER/HUNGER. Eaten items disappear.
+2. CHOOSE A MOVE: pick one die option, e.g. "d9  cost 3". You pay its POWER cost
+   (the move also costs 1 HUNGER). Greyed-out options cost more POWER than you have.
+3. ROLL: the die rolls 1..its max. You advance that many cells forward.
+4. LANDING: if a branch gives several reachable cells, pick one. If the roll
+   overshoots the EXIT, you land on the EXIT (level complete). Landing on an
+   item's cell auto-picks it into your inventory.
+Reach the EXIT to finish the level.
+
+ITEMS & INVENTORY
+Inventory is unlimited. Each item shows how much POWER and HUNGER it restores
+when eaten, and its sell value. Eat to stay alive — but items you keep until the
+end of the level are worth coins.
+
+END OF LEVEL
+- POWER and HUNGER reset for the next level.
+- ALL leftover inventory is auto-sold for COINS (sell value).
+- The SHOP opens: spend coins to BUY items that carry into the next level. Buy
+  price can differ from sell value. Can't afford it = you can't buy.
+- Only bought items carry over; coins carry over too. Buy nothing and you start
+  the next level with an empty inventory.
+
+CONTROLS
+Menu:         ENTER/Space or click "Start Run"  ·  T = Tutorial  ·  L = language  ·  ESC = quit
+Scroll text:  mouse wheel or Up/Down
+Eat phase:    1-9 or click an inventory row to eat  ·  ENTER or click "Done" to continue
+Move:         1-n or click a die button
+Dice roll:    SPACE to skip the animation
+Landing:      1-n or click a highlighted cell
+Shop:         1-n or click an item to buy  ·  ENTER or click "Continue"  ·  wheel / Up-Down to scroll
+Game over / Victory:  any key or click to return to the menu
+
+TIPS
+- Don't waste POWER on a big die if a cheap, small roll already reaches the exit.
+- Loot items on Level 1, then BUY food in the shop to survive the harder levels.
+- Watch HUNGER: it ticks down on every single move, no exceptions.
+
+Good luck, taster!
