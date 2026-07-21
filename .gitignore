@@ -1,3 +1,7 @@
 *.pyc
+__pycache__/
 img+*.png
 .aider*
+
+# Pygbag build output
+build/
