@@ -1,0 +1,47 @@
+[
+    {
+        "id": 1,
+        "name_ru": "банан",
+        "name_en": "banana",
+        "icon": "🍌",
+        "power": 1,
+        "hunger": 1,
+        "coins": 1
+    },
+    {
+        "id": 2,
+        "name_ru": "яблоко",
+        "name_en": "apple",
+        "icon": "🍎",
+        "power": 2,
+        "hunger": 1,
+        "coins": 2
+    },
+    {
+        "id": 3,
+        "name_ru": "креветка",
+        "name_en": "shrimp",
+        "icon": "🍤",
+        "power": 2,
+        "hunger": 0,
+        "coins": 2
+    },
+    {
+        "id": 4,
+        "name_ru": "бургер",
+        "name_en": "hamburger",
+        "icon": "🍔",
+        "power": 2,
+        "hunger": 0,
+        "coins": 2
+    },
+    {
+        "id": 5,
+        "name_ru": "золотая рыбка",
+        "name_en": "golden fish",
+        "icon": "🐟",
+        "power": 0,
+        "hunger": 0,
+        "coins": 4
+    }
+]
