@@ -47,7 +47,8 @@ import render
 from render import Anim, Renderer
 
 # Animation tuning (seconds).
-DICE_DUR = 0.85     # how long the die tumbles before settling
+DICE_DUR = 0.95     # how long the die tumbles before settling
+DICE_SETTLE = 0.30  # final seconds: the die is locked on its rolled face
 SLIDE_DUR = 0.32    # token slide between cells after a resolved move
 
 
@@ -75,6 +76,7 @@ class App:
         self.ui_phase = "idle"
         self.dice_t = 0.0
         self.dice_target: Optional[int] = None
+        self._dice_next_change = 0.0   # decelerating tumble: when to flip the face next
         self.slide_t = 0.0
         self.slide_from = None
         self.slide_to = None
@@ -104,14 +106,25 @@ class App:
         except Exception:
             self.mixer_ready = False
             return
-        if not self._music_started:
-            try:
-                pygame.mixer.music.load(config.MUSIC_BG)
-                pygame.mixer.music.set_volume(0.35)
-                pygame.mixer.music.play(-1)
-                self._music_started = True
-            except Exception:
-                pass
+        if self._music_started:
+            return
+        # In the Pygbag browser build the looping background music is owned by an
+        # injected <audio loop> element (see tools/enable_web_music.py). A plain
+        # HTML media element is paused/resumed as a SINGLE instance by the
+        # browser across tab switches, so it never stacks overlapping copies the
+        # way pygame.mixer.music.play(-1) does across AudioContext suspend/resume
+        # (the "melody layers on itself" bug). SFX still use pygame.mixer.
+        # On desktop there is no such element, so we use pygame.mixer.music.
+        if sys.platform == "emscripten":
+            self._music_started = True   # BGM handled by the page; do not double up
+            return
+        try:
+            pygame.mixer.music.load(config.MUSIC_BG)
+            pygame.mixer.music.set_volume(0.35)
+            pygame.mixer.music.play(-1)
+            self._music_started = True
+        except Exception:
+            pass
 
     def _sfx(self, path: str) -> None:
         if not self.mixer_ready:
@@ -466,6 +479,7 @@ class App:
     # ===================================================================
     def _begin_dice(self, move) -> None:
         self.dice_t = 0.0
+        self._dice_next_change = 0.0
         self.dice_target = self.game.rng.randint(1, move.max_value)
         self.anim.rolling = True
         self.anim.dice_target = self.dice_target
@@ -524,16 +538,34 @@ class App:
         if g.state == State.SHOP and self._prev_state != State.SHOP:
             self.last_earned = self._parse_last_earned()
             self.anim.shop_scroll = 0
+        # Victory fanfare the moment a company is cleared (one-shot SFX).
+        if g.state == State.VICTORY and self._prev_state != State.VICTORY:
+            self._sfx(config.SFX_VICTORY)
+        # Damage SFX on game over. Skipped while a slide is animating: in that
+        # case the slide-end block below plays it at the token's impact instead.
+        # This guarantees the sound is heard on EVERY game-over path (stuck after
+        # eating, dead without moving, ...), not only the slide one.
+        if (g.state == State.GAME_OVER and self._prev_state != State.GAME_OVER
+                and self.ui_phase != "slide"):
+            self._sfx(config.SFX_DAMAGE)
         self._prev_state = g.state
         self.anim.shop_earned = self.last_earned
 
-        # Dice tumble.
+        # Dice tumble: random faces that DECELERATE, then lock on the final
+        # value for the last DICE_SETTLE seconds so the player can read the roll.
         if self.ui_phase == "dice" and g.state == State.DICE_ROLL:
             self.dice_t += dt
             mv = g.pending_move
             maxv = mv.max_value if mv is not None else 6
-            # tumble: random face each frame
-            self.anim.dice_face = g.rng.randint(1, maxv)
+            if self.dice_t >= DICE_DUR - DICE_SETTLE:
+                # settle tail: stop tumbling, show the rolled value
+                self.anim.dice_face = self.dice_target or 1
+            elif self.dice_t >= self._dice_next_change:
+                # tumble: flip to a new random face on a slowing cadence
+                self.anim.dice_face = g.rng.randint(1, maxv)
+                p = self.dice_t / DICE_DUR              # 0..1 progress
+                interval = 0.045 + 0.11 * (p * p)      # ~45 ms -> ~155 ms
+                self._dice_next_change = self.dice_t + interval
             if self.dice_t >= DICE_DUR:
                 self._commit_dice()
 

@@ -19,6 +19,12 @@ jobs:
       # progress survives page reloads (the MEMFS save file is mirrored to
       # browser localStorage). See tools/enable_web_save.py.
       run: python tools/enable_web_save.py build/web/index.html
+    - name: Fix looping background music (HTML audio element)
+      # Injects an <audio loop> element so the BGM is owned by the browser media
+      # pipeline instead of pygame.mixer.music, which stacks overlapping copies
+      # of the track whenever the AudioContext is suspended/resumed on tab
+      # switches (the "music layers on itself" bug). See tools/enable_web_music.py.
+      run: python tools/enable_web_music.py build/web/index.html
     - name : "Upload to GitHub pages branch gh-pages"
       uses: JamesIves/github-pages-deploy-action@4.1.7
       with:

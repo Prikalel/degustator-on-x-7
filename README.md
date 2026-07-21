@@ -143,7 +143,8 @@ degustator-on-x-7/
 ├── items.json             # item data (id, name_ru/en, icon, color, power, hunger, coins)
 ├── tutorial_en.txt / tutorial_ru.txt
 ├── tools/
-│   └── enable_web_save.py # post-build patcher: persist progress across reloads
+│   ├── enable_web_save.py  # post-build patcher: persist progress across reloads
+│   └── enable_web_music.py # post-build patcher: web-only looping BGM element
 ├── save/                  # runtime progress file (gitignored; created on play)
 └── assets/{images,sounds}/...
 ```
@@ -179,12 +180,23 @@ building to mirror that file to the browser `localStorage`:
 ```bash
 pygbag --build .
 python tools/enable_web_save.py build/web/index.html   # idempotent
+python tools/enable_web_music.py build/web/index.html  # idempotent
 ```
 
-The CI workflow (`.github/workflows/pygbag.yml`) already runs this patcher
+The CI workflow (`.github/workflows/pygbag.yml`) already runs both patchers
 before deploying to `gh-pages`, so the published build keeps progress across
-reloads automatically. The injected script is defensive: if it can't reach the
+reloads automatically. Each injected script is defensive: if it can't reach the
 Emscripten FS it does nothing and the game still runs.
+
+**Background music.** `pygame.mixer.music.play(-1)` is fine on desktop, but in a
+Pygbag build it sits on the Web Audio API: when the tab is backgrounded the
+`AudioContext` is suspended and on foreground resumed, which leaves pygbag's
+loop with several overlapping copies of the track (the "music stacks on itself"
+bug, worse every time you tab away). `main.py` therefore skips mixer music on
+the web (`sys.platform == "emscripten"`) and `enable_web_music.py` injects a
+plain `<audio loop>` element that owns the BGM instead — browsers pause/resume a
+media element as a single instance, so it never duplicates. SFX still use the
+mixer. (Desktop is unaffected.)
 
 ---
 

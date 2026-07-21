@@ -251,7 +251,7 @@ TRANSLATIONS = {
         "inv_sell": "sell {c}",
         "eat_title": "EAT PHASE",
         "eat_hint": "Click an item (or 1-9) to eat. ENTER to continue.",
-        "eat_done": "Done (Continue)",
+        "eat_done": "Done",
         "move_title": "CHOOSE A MOVE",
         "move_hint": "Pays POWER cost + 1 hunger. Click or press 1-{n}.",
         "move_btn": "d{m}  cost {p}",
@@ -280,7 +280,6 @@ TRANSLATIONS = {
         "win_coins": "Final coins: {c}",
         "win_rating": "Rating: {r}",
         "win_return": "Press any key / click to return to the menu",
-        "legend": "row flow:  > right   < left   v down   |   S start   * exit",
         "low_power": "LOW POWER!",
         "low_hunger": "STARVING!",
         "tutorial_default": (
@@ -317,7 +316,7 @@ TRANSLATIONS = {
         "inv_sell": "продажа {c}",
         "eat_title": "ФАЗА ЕДЫ",
         "eat_hint": "Клик по предмету (или 1-9), чтобы съесть. ENTER — далее.",
-        "eat_done": "Готово (Далее)",
+        "eat_done": "Готово",
         "move_title": "ВЫБЕРИТЕ ХОД",
         "move_hint": "Тратит СИЛУ + 1 ГОЛОД. Клик или 1-{n}.",
         "move_btn": "d{m}  цена {p}",
@@ -346,7 +345,6 @@ TRANSLATIONS = {
         "win_coins": "Итоговые монеты: {c}",
         "win_rating": "Рейтинг: {r}",
         "win_return": "Любая клавиша / клик — в меню",
-        "legend": "поток строк:  > вправо   < влево   v вниз   |   S старт   * выход",
         "low_power": "МАЛО СИЛЫ!",
         "low_hunger": "ГОЛОД!",
         "tutorial_default": (
@@ -480,6 +478,32 @@ class Renderer:
             img = self.fonts.tiny.render(val, True, text_color)
             screen.blit(img, img.get_rect(midleft=(cur, y)))
             cur += img.get_width() + 4
+
+    def _draw_start_stats(self, screen, center_x, y, power, hunger, coins,
+                          icon_size=20) -> None:
+        """Compact, centred ⚡/😋/💰 run (numbers only, no labels, no +/-) for the
+        level-intro screen, replacing the old "Start POWER 3 HUNGER 3 COINS 0" line."""
+        color = COLORS["LIGHT_GREEN"]
+        groups = []
+        for emoji, kind, val in [(config.ICON_POWER, "bolt", str(int(power))),
+                                 (config.ICON_HUNGER, "mouth", str(int(hunger))),
+                                 (config.ICON_COINS, "coin", str(int(coins)))]:
+            surf = self.icons.get(emoji, icon_size, color)
+            txt = self.fonts.med.render(val, True, color)
+            groups.append((emoji, kind, surf, txt))
+        inner, gap = 4, 10
+        width = sum(((icon_size if g[2] is None else g[2].get_width()) + inner +
+                     g[3].get_width()) for g in groups) + gap * (len(groups) - 1)
+        cur = center_x - width // 2
+        for emoji, kind, surf, txt in groups:
+            if surf is not None:
+                screen.blit(surf, surf.get_rect(midleft=(cur, y)))
+            else:
+                self._draw_icon(screen, emoji, (cur + icon_size // 2, y),
+                                icon_size, color, kind)
+            cur += (icon_size if surf is None else surf.get_width()) + inner
+            screen.blit(txt, txt.get_rect(midleft=(cur, y)))
+            cur += txt.get_width() + gap
 
     # --- drawn fallback icons (used only when no emoji font/glyph is present) -
     def _fb_bolt(self, screen, center, size, color) -> None:
@@ -995,17 +1019,14 @@ class Renderer:
                                          rect.height - 4, rect.height - 4)
                 self._draw_item_glyph(screen, item, glyph_rect, item.color)
                 # icon stat run ⚡/😋/💰 instead of "P.. H.. $.."
-                self._stat_chips(screen, rect.left + rect.height + 8, rect.centery,
+                # Stat chips start AFTER the item glyph (glyph ends at
+                # rect.left + 22 + (rect.height - 4)); +24 leaves a small gap so
+                # the ⚡/😋/💰 icons never overlap the item emoji.
+                self._stat_chips(screen, rect.left + rect.height + 24, rect.centery,
                                  item.power, item.hunger, item.coins,
                                  icon_color=(40, 30, 20))
-        # legend at the bottom of the inventory panel (split on " | " into lines)
-        legend_parts = self._t("legend").split(" | ")
-        for k, part in enumerate(legend_parts):
-            self._text(screen, self.fonts.tiny, part,
-                       (panel.centerx, panel.bottom - 14 - (len(legend_parts) - 1 - k) * 14),
-                       COLORS["GRAY"])
 
-    # ------------------------------------------------------- ACTION BAR
+   # ------------------------------------------------------- ACTION BAR
     def draw_action_bar(self, screen, game, anim) -> None:
         st = game.state
         if st not in State.PLAYING_STATES:
@@ -1014,18 +1035,33 @@ class Renderer:
         self._panel(screen, bar, color=(22, 24, 32), border=(0, 0, 0))
 
         if st == State.MOVE_SELECT:
+            # Blinking "CHOOSE A MOVE" so the player notices an action is needed
+            # (same pulse style as the LOW POWER! warning in draw_hud).
+            pulse = 0.5 + 0.5 * math.sin(anim.time * 6)
+            title_col = (255, int(200 + 55 * pulse), int(40 + 80 * pulse))
             self._text(screen, self.fonts.med, self._t("move_title"),
-                       (config.WIDTH // 2, self.BOTTOM_Y + 14), COLORS["YELLOW"])
-            n = len(game.moves)
-            self._text(screen, self.fonts.tiny, self._t("move_hint", n=n),
-                       (config.WIDTH // 2, self.BOTTOM_Y + 36), COLORS["GRAY"])
+                       (config.WIDTH // 2, self.BOTTOM_Y + 14), title_col)
             for i, rect, aff, m in self.move_button_rects(game):
                 base = COLORS["LIGHT_GREEN"] if aff else (90, 90, 100)
                 pygame.draw.rect(screen, base, rect, border_radius=8)
                 pygame.draw.rect(screen, COLORS["BLACK"], rect, 2, border_radius=8)
-                label = f"{i + 1}: " + self._t("move_btn", m=m.max_value, p=m.power)
                 tcol = COLORS["BLACK"] if aff else (200, 200, 205)
-                self._text(screen, self.fonts.med, label, rect.center, tcol)
+                # "1: d6  -2⚡" — die + POWER cost as an icon; no translatable word.
+                tpart = self.fonts.med.render(
+                    f"{i + 1}: d{m.max_value}  -{m.power}", True, tcol)
+                icon = self.icons.get(config.ICON_POWER, 18, tcol)
+                gap = 3
+                iw = icon.get_width() if icon is not None else 0
+                total = tpart.get_width() + (gap + iw if icon is not None else 0)
+                x0 = rect.centerx - total // 2
+                screen.blit(tpart, tpart.get_rect(midleft=(x0, rect.centery)))
+                if icon is not None:
+                    screen.blit(icon, icon.get_rect(
+                        midleft=(x0 + tpart.get_width() + gap, rect.centery)))
+                else:
+                    self._draw_icon(screen, config.ICON_POWER,
+                                    (x0 + tpart.get_width() + gap + 9, rect.centery),
+                                    18, tcol, "bolt")
                 if not aff:
                     self._text(screen, self.fonts.tiny, self._t("move_cant"),
                                (rect.centerx, rect.bottom - 9), (230, 180, 180))
@@ -1054,8 +1090,6 @@ class Renderer:
         else:  # EAT_PHASE (or any other playing state): show eat prompt + Done
             self._text(screen, self.fonts.med, self._t("eat_title"),
                        (config.WIDTH // 2, self.BOTTOM_Y + 14), COLORS["LIGHT_GREEN"])
-            self._text(screen, self.fonts.small, self._t("eat_hint"),
-                       (config.WIDTH // 2, self.BOTTOM_Y + 38), COLORS["WHITE"])
             done = self.eat_done_rect()
             pygame.draw.rect(screen, COLORS["LIGHT_PURPLE"], done, border_radius=8)
             pygame.draw.rect(screen, COLORS["BLACK"], done, 2, border_radius=8)
@@ -1075,9 +1109,8 @@ class Renderer:
             self._text(screen, self.fonts.big, lvl.display_name(self.lang),
                        (panel.centerx, panel.top + 80), COLORS["WHITE"])
             sp = lvl.start_parameters
-            self._text(screen, self.fonts.med,
-                       self._t("lvl_intro_params", p=sp.power, h=sp.hunger, c=game.player.coins),
-                       (panel.centerx, panel.top + 120), COLORS["LIGHT_GREEN"])
+            self._draw_start_stats(screen, panel.centerx, panel.top + 120,
+                                   sp.power, sp.hunger, game.player.coins)
             self._text(screen, self.fonts.small,
                        self._t("lvl_intro_inv", c=len(game.player.inventory)),
                        (panel.centerx, panel.top + 148), COLORS["GRAY"])

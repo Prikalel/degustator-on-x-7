@@ -23,7 +23,8 @@ FPS = 60
 # level. Kept here as a tuning knob.
 CELL_SIZE = 64
 HUD_HEIGHT = 40
-INVENTORY_PANEL_WIDTH = 160
+# Widened so each row's item emoji + the ⚡/😋/💰 stat chips fit without overlap.
+INVENTORY_PANEL_WIDTH = 210
 
 # ---------------------------------------------------------------------------
 # Colours — copied verbatim from the old ``scripts/colors.py`` (Pygbag-safe,
@@ -96,6 +97,7 @@ SFX_NOM = "assets/sounds/nom-nom-nom.ogg"       # eating an inventory item
 SFX_COINS = "assets/sounds/coins-pour-out-2.ogg"  # successful shop purchase
 SFX_DICE = "assets/sounds/dice-roll-sound-2.ogg"  # the dice tumble animation
 SFX_LOOT = "assets/sounds/camping-tent-straightening.ogg"  # item looted into inventory
+SFX_VICTORY = "assets/sounds/the-sound-of-victory-winning.ogg"  # company cleared
 
 # ---------------------------------------------------------------------------
 # Fonts / emoji policy
