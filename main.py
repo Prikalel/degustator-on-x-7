@@ -87,6 +87,10 @@ class App:
         # Audio (lazy).
         self.mixer_ready = False
         self._music_started = False
+        # Dice tumble loop: the channel the dice-roll SFX plays on, so we can
+        # stop it when the tumble settles (or is skipped with SPACE).
+        self._dice_chan = None
+        self._dice_snd = None
 
     # ===================================================================
     # Audio (best-effort; lazy on first gesture for browser autoplay policy)
@@ -118,6 +122,29 @@ class App:
             snd.play()
         except Exception:
             pass
+
+    def _start_dice_sound(self) -> None:
+        """Play the dice-roll loop on its own channel so it can be stopped."""
+        self._stop_dice_sound()
+        if not self.mixer_ready:
+            return
+        try:
+            snd = pygame.mixer.Sound(config.SFX_DICE)
+            snd.set_volume(0.5)
+            self._dice_snd = snd
+            self._dice_chan = snd.play()
+        except Exception:
+            self._dice_chan = None
+            self._dice_snd = None
+
+    def _stop_dice_sound(self) -> None:
+        try:
+            if self._dice_chan is not None and self._dice_chan.get_busy():
+                self._dice_chan.stop()
+        except Exception:
+            pass
+        self._dice_chan = None
+        self._dice_snd = None
 
     # ===================================================================
     # Event routing
@@ -402,8 +429,12 @@ class App:
             return
         if 0 <= idx < len(self.game.landing_variants):
             prev = self.game.player_pos
+            before = len(self.game.player.inventory)
             self.game.resolve_landing_index(idx)  # applies the move
-            self._sfx(config.SFX_NOM)
+            # Loot SFX if the landed cell held an item that went to inventory.
+            # (No sound on a bare landing choice — the nom was removed here.)
+            if len(self.game.player.inventory) > before:
+                self._sfx(config.SFX_LOOT)
             self._begin_slide(prev, self.game.player_pos)
 
     def _buy(self, idx: int) -> None:
@@ -412,7 +443,7 @@ class App:
         offers = self.game.shop_offers()
         if 0 <= idx < len(offers):
             if self.game.buy_shop_item(idx):
-                self._sfx(config.SFX_NOM)
+                self._sfx(config.SFX_COINS)
 
     def _finish_shop(self) -> None:
         if self.game.state != State.SHOP:
@@ -427,6 +458,8 @@ class App:
         self.anim.tutorial = False
         self.ui_phase = "idle"
         self._last_level = -1
+        # Stop any dice-roll loop still playing mid-tumble.
+        self._stop_dice_sound()
 
     # ===================================================================
     # Animation controllers (non-blocking, dt-driven)
@@ -438,20 +471,31 @@ class App:
         self.anim.dice_target = self.dice_target
         self.anim.dice_face = self.dice_target
         self.ui_phase = "dice"
+        # dice-roll SFX for the duration of the tumble (stopped in _commit_dice).
+        self._start_dice_sound()
 
     def _commit_dice(self) -> None:
         """End the tumble: roll the (pre-picked) value and resolve."""
         self.anim.rolling = False
         value = self.dice_target or 1
         prev = self.game.player_pos
+        before = len(self.game.player.inventory)
+        self._stop_dice_sound()
         self.game.roll_dice(value)          # may auto-resolve or -> LANDING_CHOICE
         self.anim.dice_face = value
         self.dice_target = None
 
         if self.game.state == State.LANDING_CHOICE:
             self.ui_phase = "idle"          # wait for the player to pick a variant
+            # If the auto-resolve path somehow looted before branching, cue it.
+            if len(self.game.player.inventory) > before:
+                self._sfx(config.SFX_LOOT)
             return
-        # Single / overshoot resolution already applied the move. Slide if moved.
+        # Single / overshoot resolution already applied the move.
+        # Loot SFX if an item was picked up on the landed cell.
+        if len(self.game.player.inventory) > before:
+            self._sfx(config.SFX_LOOT)
+        # Slide if moved.
         if self.game.player_pos != prev:
             self._begin_slide(prev, self.game.player_pos)
         else:

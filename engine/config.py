@@ -92,7 +92,10 @@ BG_MAIN_MENU = "assets/images/main-menu-background.jpg"
 # Audio uses OGG: Pygbag / browsers do not support MP3.
 MUSIC_BG = "assets/sounds/background-music.ogg"
 SFX_DAMAGE = "assets/sounds/damage.ogg"
-SFX_NOM = "assets/sounds/nom-nom-nom.ogg"
+SFX_NOM = "assets/sounds/nom-nom-nom.ogg"       # eating an inventory item
+SFX_COINS = "assets/sounds/coins-pour-out-2.ogg"  # successful shop purchase
+SFX_DICE = "assets/sounds/dice-roll-sound-2.ogg"  # the dice tumble animation
+SFX_LOOT = "assets/sounds/camping-tent-straightening.ogg"  # item looted into inventory
 
 # ---------------------------------------------------------------------------
 # Fonts / emoji policy
