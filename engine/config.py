@@ -74,8 +74,6 @@ COLORS = {
 ASSETS_DIR = "assets"
 IMAGES_DIR = "assets/images"
 SOUNDS_DIR = "assets/sounds"
-ANIMATIONS_DIR = "assets/animations"
-LOCALES_DIR = "locales"
 
 ITEMS_PATH = "items.json"
 LEVELS_PATH = "levels.json"
@@ -83,13 +81,10 @@ LEVELS_PATH = "levels.json"
 # Asset file names (joined with the dirs above by the renderer later).
 BG_IN_GAME = "assets/images/in-game-background.png"
 BG_MAIN_MENU = "assets/images/main-menu-background.jpg"
-FLAG_RU = "assets/images/ru_flag.png"
-FLAG_EN = "assets/images/uk_flag.png"
-# Audio uses OGG: Pygbag / browsers do not support MP3. See README_BUILD.md.
+# Audio uses OGG: Pygbag / browsers do not support MP3.
 MUSIC_BG = "assets/sounds/background-music.ogg"
 SFX_DAMAGE = "assets/sounds/damage.ogg"
 SFX_NOM = "assets/sounds/nom-nom-nom.ogg"
-LOADING_GIF = "assets/animations/loading.gif"
 
 # ---------------------------------------------------------------------------
 # Fonts / emoji policy

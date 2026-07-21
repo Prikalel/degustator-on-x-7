@@ -142,8 +142,8 @@ _PIPS = {
 
 # ---------------------------------------------------------------------------
 # Minimal bilingual string table (flat dotted keys; .format with kwargs).
-# Kept in code so the build is robust regardless of locales/*.json shape; the
-# locale JSON is still loaded for the footer flavour text if present.
+# Strings live directly in code (no external locales/ files) so the build is
+# self-contained and robust under Pygbag.
 # ---------------------------------------------------------------------------
 TRANSLATIONS = {
     "en": {
