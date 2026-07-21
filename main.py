@@ -24,7 +24,20 @@ tkinter/PIL/threading, no blocking sleeps, all asset paths relative.
 from __future__ import annotations
 
 import asyncio
+import os
+import sys
 from typing import Optional
+
+# --- engine/ bootstrap --------------------------------------------------
+# The game modules live in ./engine so the project root stays tidy while
+# Pygbag's required entry point (main.py) remains at the root. Adding the
+# package directory to sys.path means the modules keep their existing plain
+# ``import config`` / ``from game import Game`` statements — nothing inside any
+# module had to be rewritten. Works natively and inside the Pygbag browser
+# bundle (the app dir is the working directory; __file__ resolves to main.py).
+_ENGINE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "engine")
+if _ENGINE_DIR not in sys.path:
+    sys.path.insert(0, _ENGINE_DIR)
 
 import pygame
 
