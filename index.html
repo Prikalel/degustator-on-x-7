@@ -453,5 +453,47 @@ frameborder="1"
   setInterval(step,500);
 })();
 </script>
+
+<audio id="degustator-bgm" loop preload="auto"></audio>
+<script id="degustator-bgm-sync">
+(function(){
+  var PATH="assets/sounds/background-music.ogg", VOL=0.35;
+  var el=document.getElementById("degustator-bgm");
+  if(!el){return;}
+  function getFS(){
+    try{return (window.Module&&window.Module.FS)||window.FS||(window.pygame&&window.pygame.FS)||(window._module&&window._module.FS);}
+    catch(e){return null;}
+  }
+  var srcReady=false;
+  function tryLoadSrc(){
+    if(srcReady){return true;}
+    var FS=getFS();
+    if(!FS||!FS.readFile){return false;}
+    var bytes;
+    try{bytes=FS.readFile(PATH);}catch(e){return false;}   // MEMFS not mounted yet
+    try{
+      var blob=new Blob([bytes],{type:"audio/ogg"});
+      el.src=URL.createObjectURL(blob);
+      el.volume=VOL;
+      srcReady=true;
+      return true;
+    }catch(e){return false;}
+  }
+  // The MEMFS data archive is mounted asynchronously; keep polling until the
+  // OGG is readable, then we have a stable src for the element.
+  var iv=setInterval(function(){ if(tryLoadSrc()){clearInterval(iv);} }, 300);
+  // Browsers block autoplay until a user gesture, so start playback on the first
+  // pointer/keyboard interaction (mirrors the lazy audio init in main.py).
+  function playIfReady(){
+    if(tryLoadSrc()){
+      var p=el.play();
+      if(p&&p.catch){p.catch(function(){});}
+    }
+  }
+  window.addEventListener("pointerdown", playIfReady);
+  window.addEventListener("keydown", playIfReady);
+})();
+</script>
+
 </body>
 </html>
