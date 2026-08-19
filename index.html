@@ -495,5 +495,45 @@ frameborder="1"
 })();
 </script>
 
+<script id="degustator-crosspromo">
+(function(){
+  var DELAY_MS = 60000; // 60 seconds after the game actually starts
+  var GAME_URL = "https://prikalel.gitlab.io/baba-yaga-build/";
+  var GAME_NAME = "JUST GET IN";
+  var started = false;
+
+  function showOffer(){
+    alert(
+      "Playing degustator-on-x-7? Nice!\n\n" +
+      "Try another game from the same developer:\n" +
+      GAME_NAME + "\n" + GAME_URL
+    );
+  }
+
+  function gameStarted(){
+    if (started) return;
+    started = true;
+    setTimeout(showOffer, DELAY_MS);
+  }
+
+  // The pygbag template hides #infobox right after main.py is up
+  // ("default.tmpl: done"), i.e. exactly when gameplay begins.
+  function poll(){
+    var box = document.getElementById("infobox");
+    if (box && box.style.display === "none"){
+      gameStarted();
+      return;
+    }
+    setTimeout(poll, 250);
+  }
+
+  if (document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", poll);
+  } else {
+    poll();
+  }
+})();
+</script>
+
 </body>
 </html>
