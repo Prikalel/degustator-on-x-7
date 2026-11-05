@@ -510,9 +510,15 @@ frameborder="1"
     );
   }
 
+  // Vuplex mode: no cross-promo
+  function inVuplex(){
+    return typeof window.vuplex !== "undefined" && window.vuplex !== null;
+  }
+
   function gameStarted(){
     if (started) return;
     started = true;
+    if (inVuplex()) return; // Vuplex mode: no cross-promo
     setTimeout(showOffer, DELAY_MS);
   }
 
